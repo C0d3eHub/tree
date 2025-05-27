@@ -1,0 +1,225 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+{% block title %}Gallery{% endblock %}
+
+{% block content %}
+<style>
+/* Gallery grid layout */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);  
+    gap: 18px;
+    margin-bottom: 2.5rem;
+}
+.gallery-cell {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 14px rgba(120, 84, 200, 0.08);
+    background: #fff;
+    border: none;
+}
+.card-img-top {
+    width: 100%;
+    display: block;
+    aspect-ratio: 1/1;
+    background: #f5f5f5;
+    transition: transform .18s;
+    height: 220px;
+    object-fit: cover;
+    cursor: pointer;
+}
+.card-img-top:hover {
+    transform: scale(1.035) rotate(-0.5deg);
+    box-shadow: 0 4px 18px rgba(155, 89, 182, 0.08);
+}
+
+/* Modal Gallery Styles */
+.modal-gallery {
+    display: none;
+    position: fixed;
+    z-index: 1100;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(30, 30, 30, 0.93);
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s;
+}
+.modal-content-gallery {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    background: #fff;
+    object-fit: contain;
+}
+.close-gallery {
+    position: absolute;
+    top: 28px;
+    right: 40px;
+    color: #fff;
+    font-size: 3rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 1200;
+    text-shadow: 0 2px 8px #000a;
+    transition: color 0.2s;
+}
+.close-gallery:hover {
+    color: #f44336;
+}
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(40,40,40,0.7);
+    color: #fff;
+    border: none;
+    font-size: 2.2rem;
+    padding: 0.3em 0.7em;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1200;
+    user-select: none;
+    transition: background 0.2s;
+}
+.nav-btn:hover {
+    background: #d32f2f;
+}
+.prev-btn { left: 40px; }
+.next-btn { right: 40px; }
+@media (max-width: 1200px) {
+    .gallery-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+@media (max-width: 900px) {
+    .gallery-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+    .card-img-top {
+        height: 140px;
+    }
+    .prev-btn { left: 12px; font-size: 1.5rem; }
+    .next-btn { right: 12px; font-size: 1.5rem; }
+}
+@media (max-width: 600px) {
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 7px;
+    }
+    .card-img-top {
+        height: 90px;
+    }
+    .close-gallery {
+        top: 10px;
+        right: 12px;
+        font-size: 2rem;
+    }
+    @media (max-width: 400px) {
+    .gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+}
+}
+</style>
+<div class="container py-4">
+    <h2 class="text-center mb-4" style="font-family: 'Segoe UI', 'Noto Sans', sans-serif; font-weight: 700; color: #7b3fa0;">Photo Gallery</h2>
+    <div class="gallery-grid">
+        {% for image in image_list %}
+            <div class="gallery-cell">
+                <div class="card shadow-sm">
+                    <img src="{% static image %}" class="card-img-top gallery-img"
+                         alt="Gallery Image"
+                         data-index="{{ forloop.counter0 }}"
+                         data-img="{% static image %}">
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal for full screen image -->
+<div id="imageModal" class="modal-gallery">
+    <span class="close-gallery" id="closeModal">&times;</span>
+    <img class="modal-content-gallery" id="modalImage">
+    <button class="nav-btn prev-btn" id="prevBtn">&#8592;</button>
+    <button class="nav-btn next-btn" id="nextBtn">&#8594;</button>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const images = Array.from(document.querySelectorAll('.gallery-img'));
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    const closeModal = document.getElementById("closeModal");
+    const nextBtn = document.getElementById("nextBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    let currentIndex = 0;
+
+    function showModal(index) {
+        currentIndex = index;
+        modalImg.src = images[currentIndex].getAttribute('data-img');
+        modal.style.display = "flex";
+    }
+
+    images.forEach((img, idx) => {
+        img.addEventListener('click', function() {
+            showModal(idx);
+        });
+    });
+
+    closeModal.onclick = function() {
+        modal.style.display = "none";
+        modalImg.src = "";
+    }
+
+    modal.onclick = function(e) {
+        if(e.target === modal) {
+            modal.style.display = "none";
+            modalImg.src = "";
+        }
+    }
+
+    function showNext() {
+        currentIndex = (currentIndex + 1) % images.length;
+        modalImg.src = images[currentIndex].getAttribute('data-img');
+    }
+
+    function showPrev() {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        modalImg.src = images[currentIndex].getAttribute('data-img');
+    }
+
+    nextBtn.onclick = function(e) {
+        e.stopPropagation();
+        showNext();
+    };
+
+    prevBtn.onclick = function(e) {
+        e.stopPropagation();
+        showPrev();
+    };
+
+    document.addEventListener('keydown', function(event) {
+        if(modal.style.display === "flex") {
+            if(event.key === "Escape") {
+                modal.style.display = "none";
+                modalImg.src = "";
+            } else if(event.key === "ArrowRight") {
+                showNext();
+            } else if(event.key === "ArrowLeft") {
+                showPrev();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

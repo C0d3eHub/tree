@@ -1,0 +1,34 @@
+{% extends "treeapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="tree-page">
+  <!-- Control Buttons -->
+  <div class="tree-controls">
+    <button id="add-name" data-add-member-url="{% url 'add_member' %}">Add Name</button>
+    <button id="reset-zoom">Reset Zoom</button>
+    <button id="reload-tree">Reload Tree</button>
+    <button id="comparenode-btn" style="display:none;">Compare</button>
+    <button id="correctionname-btn" style="display:none;">Correction</button>
+    
+</div>
+  
+
+  <div id="tree-container" class="fade-in">
+    <svg id="tree-svg" style="overflow: auto;"></svg>
+  </div>
+  <!-- Comparison modal and instructions -->
+  <div id="dynamic-modal-root"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+  const treeData = {{ tree_data|safe }};
+</script>
+<script src="{% static 'treeapp/js/tree.js' %}"></script>
+<script>
+  
+</script>
+{% endblock %}

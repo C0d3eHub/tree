@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Tree</title>
+    <link rel="stylesheet" href="{% static 'treeapp/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'treeapp/css/tree.css' %}">
+    <link rel="shortcut icon" href="{% static 'treeapp/images/favicon.ico' %}" type="image/x-icon">
+</head>
+<body>
+    <div class="page-container">
+        <nav class="navbar">
+            <a href="{% url 'index' %}" class="logo">🌳 Vashisht Family Tree</a>
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu" onclick="toggleMenu()" style="z-index:21;">☰</button>
+            <div class="nav-links" id="navLinks">
+                <a href="{% url 'index' %}">🏠 Home</a>
+                <a href="{% url 'tree_view' %}?style=1">🌲 Tree</a>
+                <a href="{% url 'gallery' %}">🖼️ Gallery</a>
+                <a href="http://127.0.0.1:8000/admin" target="_blank">🔐 Login</a>
+                <a href="{% url 'help' %}">❓ Help</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="footer">
+            &copy; 2025 Family Tree Viewer
+        </footer>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const links = document.getElementById('navLinks');
+            links.classList.toggle('show');
+        }
+
+        // Close nav menu on link click (mobile)
+        document.querySelectorAll('.nav-links a').forEach(function(link){
+            link.addEventListener('click', function(){
+                if (window.innerWidth <= 768) {
+                    document.getElementById('navLinks').classList.remove('show');
+                }
+            });
+        });
+
+        // Close nav menu when resized to desktop
+        window.addEventListener('resize', function(){
+            if (window.innerWidth > 768) {
+                document.getElementById('navLinks').classList.remove('show');
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
