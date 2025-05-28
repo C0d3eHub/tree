@@ -6,11 +6,15 @@ class FamilyMemberAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'parent')
     search_fields = ('name',)
 
-@admin.register(NameSuggestion)
-class NameSuggestionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'member', 'suggestion', 'approved')
-    list_editable = ('approved',)
-    list_filter = ('approved',)
+# @admin.register(NameSuggestion)
+# class NameSuggestionAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'member', 'suggestion', 'approved')
+#     list_editable = ('approved',)
+#     list_filter = ('approved',)
+
+    
+
+
 
 @admin.register(Correction)
 class CorrectionAdmin(admin.ModelAdmin):
@@ -18,6 +22,8 @@ class CorrectionAdmin(admin.ModelAdmin):
     list_editable = ('approved',)
     list_filter = ('approved',)
     search_fields = ('original_name', 'corrected_name')
+
+    
 
 
     from django.contrib import admin

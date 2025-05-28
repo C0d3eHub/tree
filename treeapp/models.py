@@ -25,6 +25,9 @@ class Correction(models.Model):
 
     def __str__(self):
         return f"{self.original_name} → {self.corrected_name}"
+    class Meta:
+        verbose_name = "Name Correction Request"
+        verbose_name_plural = "Name Correction Requests"
 
 # Signal to update FamilyMember when a Correction is approved
 
@@ -49,6 +52,11 @@ class AddMember(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = "Request to Add Member"
+        verbose_name_plural = "Requests to Add Members"
+
 
 from django.db import models
 class HelpRequest(models.Model):

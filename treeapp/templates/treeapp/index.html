@@ -1,5 +1,6 @@
 {% extends 'treeapp/base.html' %}
 {% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@500;700&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
 <style>
 .home-hero {
     display: flex;
@@ -9,35 +10,46 @@
     min-height: 56vh;
     background: linear-gradient(110deg, #f8fafc 70%, #f3e9ff 100%);
     padding: 2.5rem 1rem 1rem 1rem;
-    border-radius: 18px;
-    box-shadow: 0 1.5px 22px rgba(132, 90, 255, 0.07);
+    border-radius: 20px;
+    box-shadow: 0 4px 32px 0 rgba(132, 90, 255, 0.10);
     margin: 2.5rem auto 2rem auto;
-    max-width: 720px;
-    width: 95vw;
+    max-width: 730px;
+    width: 97vw;
     box-sizing: border-box;
+    animation: fadeSlideUp 1.6s cubic-bezier(.8,.3,.18,1.2);
+}
+
+@keyframes fadeSlideUp {
+  0% { opacity: 0; transform: translateY(40px);}
+  100% { opacity: 1; transform: translateY(0);}
 }
 
 .hero-title {
-    font-size: 2.5rem;
-    color: #7b3fa0;
+    font-size: 2.4rem;
+    color: #691c90;
     font-weight: bold;
-    letter-spacing: 1.5px;
-    margin-bottom: 0.5rem;
+    letter-spacing: 1.2px;
+    margin-bottom: 0.3rem;
     text-align: center;
-    line-height: 1.15;
-    word-break: break-word;
+    line-height: 1.12;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Poppins', sans-serif;
+    text-shadow: 0 2px 12px #f3e9ff;
 }
 
 .hero-hindi {
-    font-size: 1.55rem;
-    color: #34495e;
-    font-weight: 600;
-    margin-bottom: 1.2rem;
-    letter-spacing: 0.8px;
+    font-size: 1.5rem;
+    color: #a122d2;
+    font-weight: 700;
+    margin-bottom: 1.1rem;
+    letter-spacing: 1.1px;
     font-family: 'Noto Sans Devanagari', 'Segoe UI', sans-serif;
     text-align: center;
     line-height: 1.25;
     word-break: break-word;
+    text-shadow: 0 1px 7px #f3e9ff;
 }
 
 .hero-divider {
@@ -50,191 +62,169 @@
 }
 
 .hero-description {
-    font-size: 1.18rem;
-    color: #5d5d5d;
-    max-width: 540px;
-    margin: 0 auto 1.6rem auto;
+    font-size: 1.17rem;
+    color: #3d3d3d;
+    max-width: 550px;
+    margin: 0 auto 1.3rem auto;
     line-height: 1.7;
     text-align: center;
     word-break: break-word;
+    font-family: 'Segoe UI', sans-serif;
+    animation: fadeSlideUp 2.2s cubic-bezier(.8,.3,.18,1.2);
 }
 
 .hero-features-list {
     text-align: left;
-    max-width: 490px;
-    margin: 0 auto 0 auto;
-    font-size: 1.07em;
-    color: #5d5d5d;
-    line-height: 1.7;
+    max-width: 495px;
+    margin: 0 auto;
+    font-size: 1.1em;
+    color: #2c2c2c;
+    line-height: 1.8;
     padding-left: 0;
     list-style: none;
+    font-family: 'Segoe UI', sans-serif;
 }
 
-.hero-features-list li {
+/* Only apply .hero-feature-item styles to li that are NOT .list-highlight */
+.hero-features-list li.hero-feature-item {
     position: relative;
-    padding-left: 32px;
-    margin-bottom: 13px;
+    padding-left: 40px;
+    margin-bottom: 14px;
     background: none;
     word-break: break-word;
+    color: #191919;
+    border-radius: 7px;
+    transition: background 0.22s, box-shadow 0.22s;
 }
 
-.hero-features-list li:not(.list-highlight) {
-    transition: background 0.2s;
-}
-
-.hero-features-list li::before {
+.hero-features-list li.hero-feature-item::before {
     content: "✔";
     position: absolute;
-    left: 0;
-    color: #9b59b6;
-    font-size: 1.15em;
+    left: 8px;
     top: 1px;
+    color: #8e44ad;
+    font-size: 1.25em;
+    font-weight: 700;
 }
 
-.list-highlight {
-    background: linear-gradient(90deg, #feffb5 60%, #fcf3cf 100%);
-    border-radius: 7px;
-    padding-left: 32px;
-    margin-bottom: 13px;
-    font-weight: bold;
-    color: #5b4a00;
-    border-left: 5px solid #f1c40f;
-    box-shadow: 0 1px 4px rgba(241,196,15,0.06);
+/* Highlighted features */
+.hero-features-list li.list-highlight {
+    background: #fff700;
+    color: #111;
+    padding: 12px 18px 12px 44px;
+    margin-bottom: 17px;
+    font-weight: 800;
+    border-radius: 8px;
+    display: block;
+    box-shadow: 0 4px 18px rgba(255,191,0,0.09);
+    border: 2px solid #fffbe1;
+    font-family: 'Poppins', sans-serif;
     position: relative;
-    word-break: break-word;
+    animation: highlightPulse 2s infinite;
 }
 
-.list-highlight::before {
+@keyframes highlightPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.10);}
+  50% { box-shadow: 0 0 12px 2px rgba(255, 255, 0, 0.13);}
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.10);}
+}
+
+.hero-features-list li.list-highlight::before {
     content: "★";
-    color: #f1c40f;
-    left: 0;
-    top: 2px;
-    font-size: 1.2em;
+    color: #111;
+    left: 14px;
+    top: 3px;
+    font-size: 1.25em;
+    font-weight: 900;
+    position: absolute;
 }
 
 .hero-note {
-    color: #c0392b;
-    margin-top: 1.1rem;
-    font-size: 1.04rem;
+    color: #fff;
+    margin-top: 1.25rem;
+    font-size: 1.08rem;
     font-weight: 500;
-    background: #fff5e7;
-    border-radius: 9px;
-    padding: 9px 18px;
+    background: linear-gradient(92deg,#d7263d,#a122d2 90%);
+    border-radius: 11px;
+    padding: 10px 22px;
     display: inline-block;
     text-align: center;
-    max-width: 90vw;
+    max-width: 92vw;
     word-break: break-word;
+    box-shadow: 0 2px 14px #c0392b29;
+    font-family: 'Poppins', sans-serif;
+    animation: fadeSlideUp 2.8s cubic-bezier(.8,.3,.18,1.2);
 }
 
-/* Responsive Design */
 @media (max-width: 900px) {
     .home-hero {
         max-width: 99vw;
         padding: 2rem 2vw 1rem 2vw;
     }
-    .hero-title {
-        font-size: 2rem;
-    }
-    .hero-hindi {
-        font-size: 1.2rem;
-    }
-    .hero-description {
-        font-size: 1rem;
-        max-width: 95vw;
-    }
-    .hero-features-list {
-        font-size: 1em;
-        max-width: 95vw;
-    }
+    .hero-title { font-size: 1.7rem;}
+    .hero-hindi {font-size: 1.08rem;}
+    .hero-description {font-size: 1.01rem;max-width: 97vw;}
+    .hero-features-list {font-size: 1em;max-width: 97vw;}
 }
+
 @media (max-width: 600px) {
-    .home-hero {
-        padding: 1rem 1vw 0.7rem 1vw;
-        border-radius: 12px;
-    }
-    .hero-title {
-        font-size: 1.15rem;
-    }
-    .hero-hindi {
-        font-size: 0.98rem;
-    }
-    .hero-description {
-        font-size: 0.95rem;
-    }
-    .hero-features-list {
-        font-size: 0.95em;
-    }
-    .hero-note {
-        font-size: 0.93rem;
-        padding: 7px 6vw;
-    }
-    .list-highlight, .hero-features-list li {
-        padding-left: 26px;
-        font-size: 1em;
-    }
+    .home-hero {padding: 1rem 1vw 0.8rem 1vw;border-radius: 13px;}
+    .hero-title {font-size: 1.1rem;}
+    .hero-hindi {font-size: 0.85rem;}
+    .hero-description {font-size: 0.92rem;}
+    .hero-features-list {font-size: 0.95em;}
+    .hero-note {font-size: 0.93rem;padding: 7px 6vw;}
 }
+
 @media (max-width: 400px) {
-    .home-hero {
-        padding: 0.6rem 0.6vw 0.5rem 0.6vw;
-        border-radius: 8px;
-    }
-    .hero-title {
-        font-size: 0.9rem;
-    }
-    .hero-hindi {
-        font-size: 0.7rem;
-    }
-    .hero-description, .hero-note {
-        font-size: 0.85rem;
-    }
-    .hero-note { padding: 6px 2vw; }
+    .home-hero {padding: 0.6rem 0.6vw 0.5rem 0.6vw;border-radius: 9px;}
+    .hero-title {font-size: 0.8rem;}
+    .hero-hindi {font-size: 0.62rem;}
+    .hero-description, .hero-note {font-size: 0.81rem;}
+    .hero-note {padding: 5px 2vw;}
 }
-.msg-success {
-  padding: 1em 1.2em;
-  margin-bottom: 0.7em;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 1.08em;
-  color: #229954;
-  background: #d4efdf;
-  box-shadow: 0 1px 8px rgba(44, 62, 80, 0.05);
+
+.btn-save {
+    background: linear-gradient(90deg, #7b3fa0 60%, #8345c7 100%);
+    color: white;
+    padding: 13px 38px;
+    border-radius: 24px;
+    font-size: 1.13em;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 12px rgba(123,63,160,0.09);
+    border: none;
+    outline: none;
+    transition: background 0.19s, box-shadow 0.16s;
+    margin-top: 6px;
+    display: inline-block;
 }
-.msg-info {
-  padding: 1em 1.2em;
-  margin-bottom: 0.7em;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 1.08em;
-  color: #1565c0;
-  background: #e3f2fd;
-  box-shadow: 0 1px 8px rgba(44, 62, 80, 0.05);
+
+.btn-save:hover, .btn-save:focus {
+    background: linear-gradient(90deg, #8345c7 70%, #7b3fa0 100%);
+    box-shadow: 0 4px 18px #9b59b66a;
+    color: #fffbe9;
 }
-.msg-error, .msg-danger {
-  padding: 1em 1.2em;
-  margin-bottom: 0.7em;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 1.08em;
-  color: #c0392b;
-  background: #ffcdd2;
-  box-shadow: 0 1px 8px rgba(44, 62, 80, 0.05);
+
+[class^="msg-"] {
+    padding: 13px 22px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    font-size: 1.04em;
+    font-family: 'Segoe UI', sans-serif;
+    box-shadow: 0 2px 8px #c1a5e7a1;
+    text-align: center;
+    animation: fadeSlideUp 0.8s cubic-bezier(.8,.3,.18,1.2);
 }
-.msg-warning {
-  padding: 1em 1.2em;
-  margin-bottom: 0.7em;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 1.08em;
-  color: #b26a00;
-  background: #fff3cd;
-  box-shadow: 0 1px 8px rgba(44, 62, 80, 0.05);
-}
+.msg-success { background: #eafaf1; color: #0f5132; border: 1px solid #b3e7cc;}
+.msg-warning { background: #fff4e5; color: #945200; border: 1px solid #ffe3b6;}
+.msg-error, .msg-danger { background: #fdeaea; color: #b42323; border: 1px solid #f5b8b8;}
+.msg-info { background: #eef6fb; color: #07467a; border: 1px solid #b8d6f5;}
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@500;700&display=swap" rel="stylesheet">
 
 {% if user.is_staff %}
   <div style="text-align:center; margin:2.2em 0 0 0;">
-    <a href="{% url 'add_multiple_children' %}" class="btn-save" style="background:#7b3fa0; color:white; padding:12px 36px; border-radius:22px; font-size:1.1em; font-weight:600; text-decoration:none; box-shadow:0 2px 10px rgba(123,63,160,0.08); transition:background 0.2s;">
+    <a href="{% url 'add_multiple_children' %}" class="btn-save">
       ➕ Add Multiple Family Members
     </a>
   </div>
@@ -257,22 +247,20 @@
     </div>
     <hr class="hero-divider">
     <div class="hero-description">
-        This application is dedicated to preserving and exploring the rich ancestry of the <b>Vashisht village (Banjani)</b> families.<br>
-        <br>
-        Browse your family tree, discover your roots, and contribute to the collective knowledge of our community.<br>
-        <br>
+        This application is dedicated to preserving and exploring the rich ancestry of the <b>Vashisht village (Banjani)</b> families.<br><br>
+        Browse your family tree, discover your roots, and contribute to the collective knowledge of our community.<br><br>
         <b>Features:</b>
     </div>
     <ul class="hero-features-list">
         <li class="list-highlight">Click on <b>menu → Tree</b> to view family tree</li>
-        <li>Interactive Vashisht family tree visualization</li>
-        <li>Add, correct, and compare family member records</li>
-        <li>Preserve the stories and history of the Banjani community</li>
+        <li class="hero-feature-item">Interactive Vashisht family tree visualization</li>
+        <li class="hero-feature-item">Add, correct, and compare family member records</li>
+        <li class="hero-feature-item">Preserve the stories and history of the Banjani community</li>
         <li class="list-highlight">Right Click to <b>Track Your Family Tree</b></li>
-        <li>Compare Generations</li>
-        <li>Add Name Request</li>
-        <li>Correction Name</li>
-         <li class="list-highlight">Click Name to send correction name</b></li>
+        <li class="hero-feature-item">Compare Generations</li>
+        <li class="hero-feature-item">Add Name Request</li>
+        <li class="hero-feature-item">Correction Name</li>
+        <li class="list-highlight">Click Name to send correction name</li>
     </ul>
     <div class="hero-note">
         Note: This digital family tree is a living document. All Banjani families are welcome to participate and help ensure our heritage is never lost.
@@ -284,7 +272,7 @@ document.addEventListener("DOMContentLoaded", function() {
   setTimeout(function(){
     var msgs = document.querySelectorAll('[class^="msg-"]');
     msgs.forEach(function(msg){ msg.style.display = 'none'; });
-  }, 7000); // Hide after 7 seconds
+  }, 7000);
 });
 </script>
 {% endblock %}
