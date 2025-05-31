@@ -100,25 +100,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Collapse/expand logic
   function collapse(d) {
-  if (d.children) {
-    d._children = d.children;
-    d._children.forEach(collapse);
-    d.children = null;
+    if (d.children) {
+      d._children = d.children;
+      d._children.forEach(collapse);
+      d.children = null;
+    }
   }
-}
-
   function expand(d) {
-  if (d._children) {
-    d.children = d._children;
-    d.children.forEach(expand);
-    d._children = null;
+    if (d._children) {
+      d.children = d._children;
+      d.children.forEach(expand);
+      d._children = null;
+    }
   }
-}
-
 
   function renderTree(data, focusIdOrName, preserveZoom = false) {
     d3root = d3.hierarchy(data, d => d.children || d._children);
-
 
     // Measure text
     const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
@@ -183,22 +180,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const visibleNodes = [];
     function collectVisible(node) {
-  visibleNodes.push(node);
-  if (node.children)
-    node.children.forEach(collectVisible);
-}
-
+      visibleNodes.push(node);
+      if (node.children)
+        node.children.forEach(collectVisible);
+    }
     collectVisible(root);
 
     const visibleLinks = [];
     visibleNodes.forEach(node => {
-  if (node.children) {
-    node.children.forEach(child => {
-      visibleLinks.push({ source: node, target: child });
+      if (node.children) {
+        node.children.forEach(child => {
+          visibleLinks.push({ source: node, target: child });
+        });
+      }
     });
-  }
-});
-
 
     g.selectAll(".link").data(visibleLinks)
       .enter().append("path")
@@ -274,7 +269,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Add collapse/expand button (➕/➖) outside to the right of the node
     nodes
       .filter(d => d.data.children || d.data._children)
-
       .append("g")
       .attr("class", "collapse-toggle")
       .each(function(d) {
@@ -300,18 +294,16 @@ document.addEventListener("DOMContentLoaded", function () {
           .attr("font-size", 20)
           .attr("font-family", "sans-serif")
           .text(() => {
-  if (d.data.children) return "➖";
-  if (d.data._children) return "➕";
-  return "";
-});
-
-
+            if (d.data.children) return "➖";
+            if (d.data._children) return "➕";
+            return "";
+          });
 
         function collapseExpandHandler(event) {
           event.preventDefault();
           event.stopPropagation();
           // Collapse: only if children are present
-          if (Array.isArray(d.data.children) && d.data.children.length > 0) {
+          if (d.data.children) {
             d.data._children = d.data.children;
             d.data.children = null;
             console.log("Collapsed node:", d.data.name);
@@ -319,7 +311,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
           }
           // Expand: only if _children are present
-          if (Array.isArray(d.data._children) && d.data._children.length > 0) {
+          if (d.data._children) {
             d.data.children = d.data._children;
             d.data._children = null;
             console.log("Expanded node:", d.data.name);
@@ -358,8 +350,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ...rest of your code unchanged (highlightSpineAndSubtree, resetHighlight, compare/correction/modal logic etc)
-
   function highlightSpineAndSubtree(selectedNode) {
     highlightMode = true;
     let spine = [];
@@ -379,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let subtree = [];
     selectedNode.each(n => subtree.push(n));
-    let subtreeRoot = d3.hierarchy(selectedNode.data, d => (Array.isArray(d.children) && d.children.length > 0) ? d.children : (Array.isArray(d._children) && d._children.length > 0 ? d._children : null));
+    let subtreeRoot = d3.hierarchy(selectedNode.data, d => d.children || d._children);
     const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
     (function recMeasure(node) {
       const textElem = tempSvg.append("text")
@@ -640,10 +630,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((data) => {
         rootData = data;
         // Collapse all except root at first load
-       d3root = d3.hierarchy(data, d =>
-  d.children || (d._children || null)
-);
-
+        d3root = d3.hierarchy(rootData, d => d.children || d._children);
         if (d3root.children) d3root.children.forEach(collapse);
         renderTree(rootData);
       });

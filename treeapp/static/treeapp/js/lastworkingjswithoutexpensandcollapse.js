@@ -35,8 +35,6 @@ document.addEventListener("DOMContentLoaded", function () {
   let highlightMode = false;
   let compareMode = false, firstNode = null, comparisonTimeout = null;
 
-  let currentZoomTransform = d3.zoomIdentity;
-
   const compareBtn = document.getElementById("comparenode-btn");
   const correctionBtn = document.getElementById("correctionname-btn");
   const modalRoot = document.getElementById("dynamic-modal-root");
@@ -44,10 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const zoom = d3.zoom()
     .scaleExtent([0.05, 25])
     .translateExtent([[-20000, -20000], [20000, 20000]])
-    .on("zoom", (event) => {
-      g.attr("transform", event.transform);
-      currentZoomTransform = event.transform;
-    });
+    .on("zoom", (event) => g.attr("transform", event.transform));
   svg.call(zoom);
 
   function getColorByDepth(depth) {
@@ -69,7 +64,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const translateY = svgHeight / 2 - (bounds.y + bounds.height / 2) * scale;
     svg.transition().duration(600)
       .call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
-    currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
   }
 
   function focusOnNodes(nodes) {
@@ -85,7 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const translateY = svgHeight / 2 - ((minY + maxY) / 2) * scale;
     svg.transition().duration(600)
       .call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
-    currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
   }
 
   function updateActionButtons() {
@@ -98,27 +91,38 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Collapse/expand logic
-  function collapse(d) {
-  if (d.children) {
-    d._children = d.children;
-    d._children.forEach(collapse);
-    d.children = null;
+  function copyCollapseState(source, target) {
+    if (!source || !target) return;
+    if (source._children) {
+      target._children = target.children;
+      target.children = null;
+    }
+    if (source.children && target.children) {
+      for (let i = 0; i < source.children.length; i++) {
+        copyCollapseState(source.children[i], target.children[i]);
+      }
+    } else if (source._children && target._children) {
+      for (let i = 0; i < source._children.length; i++) {
+        copyCollapseState(source._children[i], target._children[i]);
+      }
+    }
   }
-}
 
-  function expand(d) {
-  if (d._children) {
-    d.children = d._children;
-    d.children.forEach(expand);
-    d._children = null;
+  function collapseAllExceptRoot(node) {
+    if (!node.children) return;
+    node._children = node.children;
+    node.children = null;
+    if (node._children)
+      node._children.forEach(collapseAllExceptRoot);
   }
-}
-
 
   function renderTree(data, focusIdOrName, preserveZoom = false) {
-    d3root = d3.hierarchy(data, d => d.children || d._children);
-
+    let previousRoot = null;
+    if (rootData && rootData !== data) {
+      previousRoot = d3.hierarchy(rootData, d => d.children || d._children || null);
+    }
+    d3root = d3.hierarchy(data, d => d.children || d._children || null);
+    if (previousRoot) copyCollapseState(previousRoot, d3root);
 
     // Measure text
     const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
@@ -142,9 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
     treeLayout(d3root);
     drawNodesAndLinks(d3root);
 
-    if (preserveZoom) {
-      svg.transition().duration(0).call(zoom.transform, currentZoomTransform);
-    } else {
+    if (!preserveZoom) {
       setTimeout(() => {
         let node = d3root;
         if (focusIdOrName) {
@@ -157,25 +159,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const translateY = svgHeight / 2 - (bounds.y + bounds.height / 2) * scale;
         svg.transition().duration(500)
           .call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
-        currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
       }, 0);
     }
     updateActionButtons();
-
-    // If we have a selected node to re-highlight after reload, do it.
-    if (selectedNode) {
-      let match = null;
-      if (selectedNode.data.id) {
-        match = d3root.descendants().find(n => n.data.id && n.data.id === selectedNode.data.id);
-      }
-      if (!match && selectedNode.data.name) {
-        match = d3root.descendants().find(n => n.data.name === selectedNode.data.name);
-      }
-      if (match) {
-        selectedNode = match;
-        highlightSpineAndSubtree(selectedNode);
-      }
-    }
   }
 
   function drawNodesAndLinks(root, spine = [], subtree = []) {
@@ -183,22 +169,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const visibleNodes = [];
     function collectVisible(node) {
-  visibleNodes.push(node);
-  if (node.children)
-    node.children.forEach(collectVisible);
-}
-
+      visibleNodes.push(node);
+      if (node.children && node.children.length)
+        node.children.forEach(collectVisible);
+    }
     collectVisible(root);
 
     const visibleLinks = [];
     visibleNodes.forEach(node => {
-  if (node.children) {
-    node.children.forEach(child => {
-      visibleLinks.push({ source: node, target: child });
+      if (node.children) {
+        node.children.forEach(child => {
+          visibleLinks.push({ source: node, target: child });
+        });
+      }
     });
-  }
-});
-
 
     g.selectAll(".link").data(visibleLinks)
       .enter().append("path")
@@ -235,15 +219,23 @@ document.addEventListener("DOMContentLoaded", function () {
         return `M${startX},${startY} V${elbowY} H${endX} V${endY}`;
       });
 
-    // Draw nodes
     const nodes = g.selectAll(".node")
       .data(visibleNodes)
       .enter().append("g")
       .attr("class", "node")
       .attr("transform", d => `translate(${d.x},${d.y})`)
-      .style("cursor", "pointer");
+      .style("cursor", "pointer")
+      .on("click", function (event, d) {
+        if (compareMode) return;
+        if (!highlightMode || !selectedNode || selectedNode.data.id !== d.data.id) {
+          selectedNode = d;
+          highlightSpineAndSubtree(d);
+          updateActionButtons();
+          if (modalRoot) modalRoot.innerHTML = "";
+        }
+        event.stopPropagation();
+      });
 
-    // Draw node rectangles
     nodes.insert("rect", "text")
       .attr("x", d => -Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH) / 2)
       .attr("y", d => -Math.max(d.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT) / 2)
@@ -262,7 +254,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return null;
       });
 
-    // Draw node text
     nodes.append("text")
       .attr("dy", 5)
       .attr("text-anchor", "middle")
@@ -271,94 +262,49 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("font-size", 16)
       .text(d => d.data.name);
 
-    // Add collapse/expand button (➕/➖) outside to the right of the node
-    nodes
-      .filter(d => d.data.children || d.data._children)
-
+    nodes.filter(d => (d.children && d.children.length) || (d._children && d._children.length))
       .append("g")
-      .attr("class", "collapse-toggle")
+      .attr("class", "collapse-btn")
+      .attr("transform", d => `translate(${Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH)/2 + 18},0)`)
+      .style("cursor", "pointer")
       .each(function(d) {
-        const boxWidth = Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
-        const x = boxWidth / 2 + 22;
-        const y = 0;
-
-        const group = d3.select(this)
-          .attr("transform", `translate(${x},${y})`)
-          .style("pointer-events", "all");
-
-        const circle = group.append("circle")
+        d3.select(this)
+          .append("circle")
           .attr("r", 13)
           .attr("fill", "#fff")
-          .attr("stroke", "#666")
-          .attr("stroke-width", 1.5)
-          .attr("filter", "url(#button-shadow)")
-          .attr("cursor", "pointer");
-
-        const sign = group.append("text")
+          .attr("stroke", "#888")
+          .attr("stroke-width", 2)
+          .attr("filter", "url(#button-shadow)");
+        d3.select(this)
+          .append("text")
           .attr("text-anchor", "middle")
-          .attr("dy", 8)
-          .attr("font-size", 20)
-          .attr("font-family", "sans-serif")
-          .text(() => {
-  if (d.data.children) return "➖";
-  if (d.data._children) return "➕";
-  return "";
-});
-
-
-
-        function collapseExpandHandler(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          // Collapse: only if children are present
-          if (Array.isArray(d.data.children) && d.data.children.length > 0) {
-            d.data._children = d.data.children;
-            d.data.children = null;
-            console.log("Collapsed node:", d.data.name);
-            renderTree(rootData, d.data.id, true);
-            return;
-          }
-          // Expand: only if _children are present
-          if (Array.isArray(d.data._children) && d.data._children.length > 0) {
-            d.data.children = d.data._children;
-            d.data._children = null;
-            console.log("Expanded node:", d.data.name);
-            renderTree(rootData, d.data.id, true);
-            return;
+          .attr("dy", 6)
+          .attr("font-size", 18)
+          .attr("font-weight", 700)
+          .attr("fill", "#333")
+          .text(d => d.children && d.children.length ? "−" : "+");
+      })
+      .on("click", function(event, d) {
+        event.stopPropagation();
+        if (d.children && d.children.length) {
+          d._children = d.children;
+          d.children = null;
+        } else if (d._children && d._children.length) {
+          d.children = d._children;
+          d._children = null;
+        }
+        renderTree(rootData, d.data.id, true);
+        // --- Fix: If this node was highlighted, re-highlight after redraw
+        if (selectedNode && selectedNode.data.id === d.data.id) {
+          // Find the corresponding node in new tree
+          const newSelected = d3root.descendants().find(n => n.data.id === d.data.id);
+          if (newSelected) {
+            selectedNode = newSelected;
+            highlightSpineAndSubtree(selectedNode);
           }
         }
-
-        group.on("click touchstart", collapseExpandHandler);
-        circle.on("click touchstart", collapseExpandHandler);
-        sign.on("click touchstart", collapseExpandHandler);
       });
-
-    // Node click event (after +/- button to avoid highlight on collapse/expand)
-    nodes.on("click", function(event, d) {
-      if (event.target.closest(".collapse-toggle")) {
-        event.stopPropagation();
-        return;
-      }
-      if (compareMode) return;
-      resetHighlight();
-      let match = null;
-      if (d.data.id) {
-        match = d3root.descendants().find(n => n.data.id === d.data.id);
-      }
-      if (!match && d.data.name) {
-        match = d3root.descendants().find(n => n.data.name === d.data.name);
-      }
-      if (match) {
-        selectedNode = match;
-        highlightSpineAndSubtree(match);
-        updateActionButtons();
-        if (modalRoot) modalRoot.innerHTML = "";
-      }
-      event.stopPropagation();
-    });
   }
-
-  // ...rest of your code unchanged (highlightSpineAndSubtree, resetHighlight, compare/correction/modal logic etc)
 
   function highlightSpineAndSubtree(selectedNode) {
     highlightMode = true;
@@ -379,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let subtree = [];
     selectedNode.each(n => subtree.push(n));
-    let subtreeRoot = d3.hierarchy(selectedNode.data, d => (Array.isArray(d.children) && d.children.length > 0) ? d.children : (Array.isArray(d._children) && d._children.length > 0 ? d._children : null));
+    let subtreeRoot = d3.hierarchy(selectedNode.data, d => d.children || d._children);
     const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
     (function recMeasure(node) {
       const textElem = tempSvg.append("text")
@@ -441,6 +387,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (modalRoot) modalRoot.innerHTML = "";
   }
 
+  // Only reset highlight when NOT in compare mode, NOT clicking modal, and NOT inside a node
   document.addEventListener("click", function (event) {
     if (modalRoot && modalRoot.innerHTML.trim() !== "") return;
     if (compareMode) return;
@@ -448,6 +395,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.target.closest(".modal-overlay")) return;
     resetHighlight();
   });
+
+  // --- Compare and Correction Modal Logic and event handlers, unchanged from previous versions ---
 
   function showCompareModal(htmlBody, showCancel = false, onlyOk = false) {
     modalRoot.innerHTML = `
@@ -627,6 +576,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const cookie = document.cookie.split(";").find((c) => c.trim().startsWith("csrftoken="));
     return cookie ? cookie.split("=")[1] : "";
   }
+
   document.getElementById("reset-zoom")?.addEventListener("click", resetZoom);
   document.getElementById("reload-tree")?.addEventListener("click", () => {
     loadTreeData();
@@ -638,13 +588,10 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch("/data/")
       .then((res) => res.json())
       .then((data) => {
+        if (!rootData) {
+          collapseAllExceptRoot(data);
+        }
         rootData = data;
-        // Collapse all except root at first load
-       d3root = d3.hierarchy(data, d =>
-  d.children || (d._children || null)
-);
-
-        if (d3root.children) d3root.children.forEach(collapse);
         renderTree(rootData);
       });
   }

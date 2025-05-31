@@ -5,13 +5,14 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 
 def build_tree(member):
-    """Recursively build a nested dictionary representing the tree."""
-    children = FamilyMember.objects.filter(parent=member)
+    children = list(FamilyMember.objects.filter(parent=member))
     return {
         "name": member.name,
         "id": member.id,
-        "children": [build_tree(child) for child in children]
+        "children": [build_tree(child) for child in children],  # always a list
+        "_children": []  # always a list
     }
+
 
 def tree_view(request):
     """Render the tree HTML template with root member's name and tree data."""

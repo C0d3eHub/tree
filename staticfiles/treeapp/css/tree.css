@@ -149,6 +149,9 @@
     line-height: normal;
     /* For consistent text rendering with button */
 }
+.node, .collapse-btn {
+  cursor: pointer;
+}
 
 .tree-controls a:hover {
     background-color: #2980b9;

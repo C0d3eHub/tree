@@ -7,7 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
     .attr("height", container.clientHeight + 1000);
 
   svg.select("defs").remove();
-  svg.append("defs").append("marker")
+  const defs = svg.append("defs");
+  defs.append("marker")
     .attr("id", "arrowhead")
     .attr("viewBox", "0 -6 12 12")
     .attr("refX", 7)
@@ -19,6 +20,9 @@ document.addEventListener("DOMContentLoaded", function () {
     .append("path")
     .attr("d", "M0,-6L12,0L0,6Z")
     .attr("fill", "#cc3366");
+  defs.append("filter")
+    .attr("id", "button-shadow")
+    .html(`<feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#bbb" flood-opacity="0.6"/>`);
 
   let g = svg.append("g").attr("class", "tree-group");
 
@@ -26,21 +30,24 @@ document.addEventListener("DOMContentLoaded", function () {
   const NODE_HORIZ_PADDING = 18, NODE_VERT_PADDING = 14;
   const NODE_MARGIN_X = 10, NODE_MARGIN_Y = 36;
 
-  let treeLayout, rootData, d3root, originalPositions = null;
+  let treeLayout, rootData, d3root;
   let selectedNode = null;
+  let highlightMode = false;
+  let compareMode = false, firstNode = null, comparisonTimeout = null;
 
-  // Compare and Correction buttons
+  let currentZoomTransform = d3.zoomIdentity;
+
   const compareBtn = document.getElementById("comparenode-btn");
   const correctionBtn = document.getElementById("correctionname-btn");
   const modalRoot = document.getElementById("dynamic-modal-root");
 
-  // Compare modal state
-  let compareMode = false, firstNode = null, comparisonTimeout = null;
-
   const zoom = d3.zoom()
     .scaleExtent([0.05, 25])
     .translateExtent([[-20000, -20000], [20000, 20000]])
-    .on("zoom", (event) => g.attr("transform", event.transform));
+    .on("zoom", (event) => {
+      g.attr("transform", event.transform);
+      currentZoomTransform = event.transform;
+    });
   svg.call(zoom);
 
   function getColorByDepth(depth) {
@@ -55,14 +62,16 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function resetZoom() {
-    const svgWidth = container.clientWidth, svgHeight = container.clientHeight;
     const bounds = g.node().getBBox();
+    const svgWidth = container.clientWidth, svgHeight = container.clientHeight;
     const scale = Math.min(svgWidth / bounds.width, svgHeight / bounds.height) * 0.85;
     const translateX = svgWidth / 2 - (bounds.x + bounds.width / 2) * scale;
     const translateY = svgHeight / 2 - (bounds.y + bounds.height / 2) * scale;
     svg.transition().duration(600)
       .call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
+    currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
   }
+
   function focusOnNodes(nodes) {
     if (!nodes.length) return;
     const minX = d3.min(nodes, d => d.x), maxX = d3.max(nodes, d => d.x);
@@ -76,6 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const translateY = svgHeight / 2 - ((minY + maxY) / 2) * scale;
     svg.transition().duration(600)
       .call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
+    currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
   }
 
   function updateActionButtons() {
@@ -88,264 +98,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function highlightSpineAndSubtree(selectedNode) {
-    // 1. Find ancestry path
-    let spine = [];
-    let curr = selectedNode;
-    while (curr) {
-      spine.push(curr);
-      curr = curr.parent;
-    }
-    spine = spine.reverse();
-
-    // 2. Stack spine nodes vertically
-    const x0 = spine[0].x;
-    let yStart = spine[0].y;
-    for (let i = 0; i < spine.length; ++i) {
-      spine[i].x = x0;
-      spine[i].y = yStart + i * (MIN_NODE_HEIGHT + NODE_MARGIN_Y);
-    }
-
-    // 3. Layout subtree as tree
-    let subtree = [];
-    selectedNode.each(n => subtree.push(n));
-    let subtreeRoot = d3.hierarchy(selectedNode.data, d => d.children || d._children);
-    // measure text for subtree nodes
-    const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
-    (function recMeasure(node) {
-      const textElem = tempSvg.append("text")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 16)
-        .text(node.data.name);
-      const bbox = textElem.node().getBBox();
-      node.data._textWidth = bbox.width;
-      node.data._textHeight = bbox.height;
-      textElem.remove();
-      if (node.children) node.children.forEach(recMeasure);
-      if (node._children) node._children.forEach(recMeasure);
-    })(subtreeRoot);
-    tempSvg.remove();
-    const subtreeTree = d3.tree().nodeSize([MIN_NODE_WIDTH + NODE_MARGIN_X, MIN_NODE_HEIGHT + NODE_MARGIN_Y]);
-    subtreeTree(subtreeRoot);
-    // Offset subtree nodes
-    let yOffset = spine[spine.length - 1].y;
-    let xOffset = x0 + MIN_NODE_WIDTH + 80;
-    subtreeRoot.each((d, i) => {
-      if (i === 0) return;
-      let realNode = subtree.find(n => n.data.name === d.data.name && n.depth === (selectedNode.depth + d.depth));
-      if (realNode) {
-        realNode.x = xOffset + d.x;
-        realNode.y = yOffset + d.y;
-      }
-    });
-
-    drawNodesAndLinks(d3root, spine, subtree);
-
-    // draw vertical green line for spine
-    g.selectAll(".highlight-spine").remove();
-    g.append("line")
-      .attr("class", "highlight-spine")
-      .attr("x1", x0).attr("x2", x0)
-      .attr("y1", spine[0].y)
-      .attr("y2", spine[spine.length - 1].y)
-      .attr("stroke", "lime").attr("stroke-width", 7).attr("opacity", 0.18).lower();
-
-    // Fade all non-highlighted nodes/links
-    g.selectAll(".node rect").attr("opacity", d =>
-      (spine.includes(d) || subtree.includes(d)) ? 1 : 0.35
-    );
-    g.selectAll(".link").attr("opacity", d =>
-      (spine.includes(d.source) && spine.includes(d.target)) ||
-      (subtree.includes(d.source) && subtree.includes(d.target))
-        ? 1 : 0.25
-    );
-    g.selectAll("text").attr("opacity", d =>
-      (spine.includes(d) || subtree.includes(d)) ? 1 : 0.38
-    );
-
-    focusOnNodes(spine.concat(subtree));
+  // Collapse/expand logic
+  function collapse(d) {
+  if (d.children) {
+    d._children = d.children;
+    d._children.forEach(collapse);
+    d.children = null;
   }
+}
 
-  function resetHighlight() {
-    renderTree(rootData, null, true);
-    g.selectAll(".highlight-spine").remove();
-    g.selectAll(".node rect")
-      .attr("opacity", 1)
-      .attr("stroke", null)
-      .attr("stroke-width", null);
-    g.selectAll(".link")
-      .attr("opacity", 1)
-      .attr("stroke", d => getDarkerColor(getColorByDepth(d.source.depth)))
-      .attr("stroke-width", 2);
-    g.selectAll("text")
-      .attr("opacity", 1);
-    selectedNode = null;
-    updateActionButtons();
-    modalRoot && (modalRoot.innerHTML = "");
+  function expand(d) {
+  if (d._children) {
+    d.children = d._children;
+    d.children.forEach(expand);
+    d._children = null;
   }
+}
 
-  svg.on("click", () => {
-    if (compareMode) return;
-    resetHighlight();
-  });
-
-  function toggleCollapse(d) {
-    if (d.children) {
-      d._children = d.children;
-      d.children = null;
-    } else if (d._children) {
-      d.children = d._children;
-      d._children = null;
-    }
-    renderTree(rootData, d.data.id || d.data.name, true);
-  }
-
-  function drawNodesAndLinks(root, spine = [], subtree = []) {
-    g.selectAll("*").remove();
-
-    // Only visible nodes (collapsed subtrees are not recursed!)
-    const visibleNodes = [];
-    function collectVisible(node) {
-      visibleNodes.push(node);
-      if (node.children && node.children.length)
-        node.children.forEach(collectVisible);
-      // DO NOT recurse into node._children!
-    }
-    collectVisible(root);
-
-    // Only links between visible nodes
-    const visibleLinks = [];
-    visibleNodes.forEach(node => {
-      if (node.children) {
-        node.children.forEach(child => {
-          visibleLinks.push({ source: node, target: child });
-        });
-      }
-    });
-
-    g.selectAll(".link").data(visibleLinks)
-      .enter().append("path")
-      .attr("class", "link")
-      .attr("fill", "none")
-      .attr("stroke", d => {
-        if (spine.includes(d.source) && spine.includes(d.target)) return "lime";
-        if (subtree.includes(d.source) && subtree.includes(d.target)) return "#ff0";
-        return getDarkerColor(getColorByDepth(d.source.depth));
-      })
-      .attr("stroke-width", d => {
-        if (spine.includes(d.source) && spine.includes(d.target)) return 3;
-        if (subtree.includes(d.source) && subtree.includes(d.target)) return 2;
-        return 2;
-      })
-      .attr("opacity", d =>
-        (spine.length > 0)
-          ? ((spine.includes(d.source) && spine.includes(d.target)) ||
-            (subtree.includes(d.source) && subtree.includes(d.target))
-            ? 1 : 0.08)
-          : 1
-      )
-      .attr("marker-end", "url(#arrowhead)")
-      .attr("d", function (d) {
-        const sourceWidth = Math.max(d.source.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
-        const sourceHeight = Math.max(d.source.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT);
-        const targetWidth = Math.max(d.target.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
-        const targetHeight = Math.max(d.target.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT);
-        const startX = d.source.x;
-        const startY = d.source.y + sourceHeight / 2 - 3;
-        const endX = d.target.x;
-        const endY = d.target.y - targetHeight / 2 - 3;
-        const elbowY = (startY + endY) / 2;
-        return `M${startX},${startY} V${elbowY} H${endX} V${endY}`;
-      });
-
-    const nodes = g.selectAll(".node")
-      .data(visibleNodes)
-      .enter().append("g")
-      .attr("class", "node")
-      .attr("transform", d => `translate(${d.x},${d.y})`)
-      .on("click", function (event, d) {
-        if (event.target.classList.contains('collapser')) return;
-        if (compareMode) return;
-        event.stopPropagation();
-        selectedNode = d;
-        highlightSpineAndSubtree(d);
-        updateActionButtons();
-        modalRoot && (modalRoot.innerHTML = "");
-      });
-
-    nodes.insert("rect", "text")
-      .attr("x", d => -Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH) / 2)
-      .attr("y", d => -Math.max(d.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT) / 2)
-      .attr("width", d => Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH))
-      .attr("height", d => Math.max(d.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT))
-      .attr("rx", 10)
-      .attr("fill", d => getColorByDepth(d.depth))
-      .attr("stroke", d => {
-        if (spine.includes(d)) return "lime";
-        if (subtree.includes(d)) return "#ff0";
-        return null;
-      })
-      .attr("stroke-width", d => {
-        if (spine.includes(d)) return 3;
-        if (subtree.includes(d)) return 2;
-        return null;
-      })
-      .attr("opacity", d =>
-        (spine.length && (spine.includes(d) || subtree.includes(d))) ? 1 : 1
-      );
-
-    nodes.append("text")
-      .attr("dy", 5)
-      .attr("text-anchor", "middle")
-      .attr("fill", "#fff")
-      .attr("font-family", "sans-serif")
-      .attr("font-size", 16)
-      .text(d => d.data.name);
-
-    // --- COLLAPSE/EXPAND BUTTONS ---
-    nodes.filter(d => (d.children && d.children.length) || (d._children && d._children.length))
-      .append("g")
-      .attr("class", "collapser")
-      .attr("transform", d => {
-        let w = Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
-        return `translate(${w / 2 + 19},0)`;
-      })
-      .style("cursor", "pointer")
-      .each(function (d) {
-        d3.select(this).append("circle")
-          .attr("r", 10)
-          .attr("fill", "#fff")
-          .attr("stroke", "#888")
-          .attr("stroke-width", 2)
-          .attr("class", "collapser");
-        if (!d.children) {
-          // Collapsed: Draw plus
-          d3.select(this).append("line")
-            .attr("x1", -5).attr("x2", 5).attr("y1", 0).attr("y2", 0)
-            .attr("stroke", "#888").attr("stroke-width", 2)
-            .attr("class", "collapser");
-          d3.select(this).append("line")
-            .attr("x1", 0).attr("x2", 0).attr("y1", -5).attr("y2", 5)
-            .attr("stroke", "#888").attr("stroke-width", 2)
-            .attr("class", "collapser");
-        } else {
-          // Expanded: Draw minus
-          d3.select(this).append("line")
-            .attr("x1", -5).attr("x2", 5).attr("y1", 0).attr("y2", 0)
-            .attr("stroke", "#888").attr("stroke-width", 2)
-            .attr("class", "collapser");
-        }
-        d3.select(this).on("click", function (event) {
-          event.stopPropagation();
-          resetHighlight();
-          toggleCollapse(d);
-        });
-      });
-  }
 
   function renderTree(data, focusIdOrName, preserveZoom = false) {
-    rootData = data;
-    d3root = d3.hierarchy(data, d => d.children || d._children || null);
+    d3root = d3.hierarchy(data, d => d.children || d._children);
+
 
     // Measure text
     const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
@@ -369,25 +142,327 @@ document.addEventListener("DOMContentLoaded", function () {
     treeLayout(d3root);
     drawNodesAndLinks(d3root);
 
-    if (!preserveZoom) {
+    if (preserveZoom) {
+      svg.transition().duration(0).call(zoom.transform, currentZoomTransform);
+    } else {
       setTimeout(() => {
         let node = d3root;
         if (focusIdOrName) {
           node = d3root.descendants().find(n => n.data.id === focusIdOrName || n.data.name === focusIdOrName) || d3root;
         }
-        const svgWidth = container.clientWidth, svgHeight = container.clientHeight;
         const bounds = g.node().getBBox();
+        const svgWidth = container.clientWidth, svgHeight = container.clientHeight;
         const scale = Math.min(svgWidth / bounds.width, svgHeight / bounds.height) * 0.85;
         const translateX = svgWidth / 2 - (bounds.x + bounds.width / 2) * scale;
         const translateY = svgHeight / 2 - (bounds.y + bounds.height / 2) * scale;
         svg.transition().duration(500)
           .call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
+        currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
       }, 0);
     }
     updateActionButtons();
+
+    // If we have a selected node to re-highlight after reload, do it.
+    if (selectedNode) {
+      let match = null;
+      if (selectedNode.data.id) {
+        match = d3root.descendants().find(n => n.data.id && n.data.id === selectedNode.data.id);
+      }
+      if (!match && selectedNode.data.name) {
+        match = d3root.descendants().find(n => n.data.name === selectedNode.data.name);
+      }
+      if (match) {
+        selectedNode = match;
+        highlightSpineAndSubtree(selectedNode);
+      }
+    }
   }
 
-  // --- Compare and Correction Modal Logic ---
+  function drawNodesAndLinks(root, spine = [], subtree = []) {
+    g.selectAll("*").remove();
+
+    const visibleNodes = [];
+    function collectVisible(node) {
+  visibleNodes.push(node);
+  if (node.children)
+    node.children.forEach(collectVisible);
+}
+
+    collectVisible(root);
+
+    const visibleLinks = [];
+    visibleNodes.forEach(node => {
+  if (node.children) {
+    node.children.forEach(child => {
+      visibleLinks.push({ source: node, target: child });
+    });
+  }
+});
+
+
+    g.selectAll(".link").data(visibleLinks)
+      .enter().append("path")
+      .attr("class", "link")
+      .attr("fill", "none")
+      .attr("stroke", d => {
+        if (spine.includes(d.source) && spine.includes(d.target)) return "lime";
+        if (subtree.includes(d.source) && subtree.includes(d.target)) return "#ff0";
+        return getDarkerColor(getColorByDepth(d.source.depth));
+      })
+      .attr("stroke-width", d => {
+        if (spine.includes(d.source) && spine.includes(d.target)) return 3;
+        if (subtree.includes(d.source) && subtree.includes(d.target)) return 2;
+        return 2;
+      })
+      .attr("opacity", d =>
+        (spine.length > 0)
+          ? ((spine.includes(d.source) && spine.includes(d.target)) ||
+             (subtree.includes(d.source) && subtree.includes(d.target))
+            ? 1 : 0.08)
+          : 1
+      )
+      .attr("marker-end", "url(#arrowhead)")
+      .attr("d", function (d) {
+        const sourceWidth = Math.max(d.source.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
+        const sourceHeight = Math.max(d.source.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT);
+        const targetWidth = Math.max(d.target.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
+        const targetHeight = Math.max(d.target.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT);
+        const startX = d.source.x;
+        const startY = d.source.y + sourceHeight / 2 - 3;
+        const endX = d.target.x;
+        const endY = d.target.y - targetHeight / 2 - 3;
+        const elbowY = (startY + endY) / 2;
+        return `M${startX},${startY} V${elbowY} H${endX} V${endY}`;
+      });
+
+    // Draw nodes
+    const nodes = g.selectAll(".node")
+      .data(visibleNodes)
+      .enter().append("g")
+      .attr("class", "node")
+      .attr("transform", d => `translate(${d.x},${d.y})`)
+      .style("cursor", "pointer");
+
+    // Draw node rectangles
+    nodes.insert("rect", "text")
+      .attr("x", d => -Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH) / 2)
+      .attr("y", d => -Math.max(d.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT) / 2)
+      .attr("width", d => Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH))
+      .attr("height", d => Math.max(d.data._textHeight + NODE_VERT_PADDING, MIN_NODE_HEIGHT))
+      .attr("rx", 10)
+      .attr("fill", d => getColorByDepth(d.depth))
+      .attr("stroke", d => {
+        if (spine.includes(d)) return "lime";
+        if (subtree.includes(d)) return "#ff0";
+        return null;
+      })
+      .attr("stroke-width", d => {
+        if (spine.includes(d)) return 3;
+        if (subtree.includes(d)) return 2;
+        return null;
+      });
+
+    // Draw node text
+    nodes.append("text")
+      .attr("dy", 5)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#fff")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 16)
+      .text(d => d.data.name);
+
+    // Add collapse/expand button (➕/➖) outside to the right of the node
+    // Add collapse/expand button (➕/➖) outside to the right of the node
+    nodes
+      .filter(d => {
+        return (d.data.children && d.data.children.length > 0) || 
+               (d.data._children && d.data._children.length > 0);
+      })
+      .append("g")
+      .attr("class", "collapse-toggle")
+      .each(function(d) {
+        const boxWidth = Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
+        
+        // Determine if node is on left or right side of the tree
+        const isLeftSide = d.x < d3root.x;
+        
+        // Position button on the appropriate side with more distance
+        const x = isLeftSide ? 
+          -(boxWidth / 2 + 35) : // Left side: place button on left
+          (boxWidth / 2 + 35);   // Right side: place button on right
+        
+        const y = 0;
+        
+        const group = d3.select(this)
+          .attr("transform", `translate(${x},${y})`)
+          .style("pointer-events", "all");
+          
+        // Rest of the code remains the same
+
+
+        const circle = group.append("circle")
+          .attr("r", 13)
+          .attr("fill", "#fff")
+          .attr("stroke", "#666")
+          .attr("stroke-width", 1.5)
+          .attr("filter", "url(#button-shadow)")
+          .attr("cursor", "pointer");
+
+        const sign = group.append("text")
+          .attr("text-anchor", "middle")
+          .attr("dy", 8)
+          .attr("font-size", 20)
+          .attr("font-family", "sans-serif")
+          .text(() => {
+  if (d.data.children) return "➖";
+  if (d.data._children) return "➕";
+  return "";
+});
+
+
+
+        function collapseExpandHandler(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          // Collapse: only if children are present
+          if (Array.isArray(d.data.children) && d.data.children.length > 0) {
+            d.data._children = d.data.children;
+            d.data.children = null;
+            console.log("Collapsed node:", d.data.name);
+            renderTree(rootData, d.data.id, true);
+            return;
+          }
+          // Expand: only if _children are present
+          if (Array.isArray(d.data._children) && d.data._children.length > 0) {
+            d.data.children = d.data._children;
+            d.data._children = null;
+            console.log("Expanded node:", d.data.name);
+            renderTree(rootData, d.data.id, true);
+            return;
+          }
+        }
+
+        group.on("click touchstart", collapseExpandHandler);
+        circle.on("click touchstart", collapseExpandHandler);
+        sign.on("click touchstart", collapseExpandHandler);
+      });
+
+    // Node click event (after +/- button to avoid highlight on collapse/expand)
+    nodes.on("click", function(event, d) {
+      if (event.target.closest(".collapse-toggle")) {
+        event.stopPropagation();
+        return;
+      }
+      if (compareMode) return;
+      resetHighlight();
+      let match = null;
+      if (d.data.id) {
+        match = d3root.descendants().find(n => n.data.id === d.data.id);
+      }
+      if (!match && d.data.name) {
+        match = d3root.descendants().find(n => n.data.name === d.data.name);
+      }
+      if (match) {
+        selectedNode = match;
+        highlightSpineAndSubtree(match);
+        updateActionButtons();
+        if (modalRoot) modalRoot.innerHTML = "";
+      }
+      event.stopPropagation();
+    });
+  }
+
+  // ...rest of your code unchanged (highlightSpineAndSubtree, resetHighlight, compare/correction/modal logic etc)
+
+  function highlightSpineAndSubtree(selectedNode) {
+    highlightMode = true;
+    let spine = [];
+    let curr = selectedNode;
+    while (curr) {
+      spine.push(curr);
+      curr = curr.parent;
+    }
+    spine = spine.reverse();
+
+    const x0 = spine[0].x;
+    let yStart = spine[0].y;
+    for (let i = 0; i < spine.length; ++i) {
+      spine[i].x = x0;
+      spine[i].y = yStart + i * (MIN_NODE_HEIGHT + NODE_MARGIN_Y);
+    }
+
+    let subtree = [];
+    selectedNode.each(n => subtree.push(n));
+    let subtreeRoot = d3.hierarchy(selectedNode.data, d => (Array.isArray(d.children) && d.children.length > 0) ? d.children : (Array.isArray(d._children) && d._children.length > 0 ? d._children : null));
+    const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
+    (function recMeasure(node) {
+      const textElem = tempSvg.append("text")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 16)
+        .text(node.data.name);
+      const bbox = textElem.node().getBBox();
+      node.data._textWidth = bbox.width;
+      node.data._textHeight = bbox.height;
+      textElem.remove();
+      if (node.children) node.children.forEach(recMeasure);
+      if (node._children) node._children.forEach(recMeasure);
+    })(subtreeRoot);
+    tempSvg.remove();
+    const subtreeTree = d3.tree().nodeSize([MIN_NODE_WIDTH + NODE_MARGIN_X, MIN_NODE_HEIGHT + NODE_MARGIN_Y]);
+    subtreeTree(subtreeRoot);
+    let yOffset = spine[spine.length - 1].y;
+    let xOffset = x0 + MIN_NODE_WIDTH + 80;
+    subtreeRoot.each((d, i) => {
+      if (i === 0) return;
+      let realNode = subtree.find(n => n.data.name === d.data.name && n.depth === (selectedNode.depth + d.depth));
+      if (realNode) {
+        realNode.x = xOffset + d.x;
+        realNode.y = yOffset + d.y;
+      }
+    });
+
+    drawNodesAndLinks(d3root, spine, subtree);
+
+    g.selectAll(".highlight-spine").remove();
+    g.append("line")
+      .attr("class", "highlight-spine")
+      .attr("x1", x0).attr("x2", x0)
+      .attr("y1", spine[0].y)
+      .attr("y2", spine[spine.length - 1].y)
+      .attr("stroke", "lime").attr("stroke-width", 7).attr("opacity", 0.18).lower();
+
+    g.selectAll(".node rect").attr("opacity", d =>
+      (spine.includes(d) || subtree.includes(d)) ? 1 : 0.35
+    );
+    g.selectAll(".link").attr("opacity", d =>
+      (spine.includes(d.source) && spine.includes(d.target)) ||
+      (subtree.includes(d.source) && subtree.includes(d.target))
+        ? 1 : 0.25
+    );
+    g.selectAll("text").attr("opacity", d =>
+      (spine.includes(d) || subtree.includes(d)) ? 1 : 0.38
+    );
+
+    focusOnNodes(spine.concat(subtree));
+  }
+
+  function resetHighlight() {
+    highlightMode = false;
+    selectedNode = null;
+    renderTree(rootData, null, true);
+    g.selectAll(".highlight-spine").remove();
+    updateActionButtons();
+    if (modalRoot) modalRoot.innerHTML = "";
+  }
+
+  document.addEventListener("click", function (event) {
+    if (modalRoot && modalRoot.innerHTML.trim() !== "") return;
+    if (compareMode) return;
+    if (event.target.closest(".node")) return;
+    if (event.target.closest(".modal-overlay")) return;
+    resetHighlight();
+  });
+
   function showCompareModal(htmlBody, showCancel = false, onlyOk = false) {
     modalRoot.innerHTML = `
       <div class="modal-overlay" id="compare-modal" style="user-select: none;">
@@ -460,6 +535,7 @@ document.addEventListener("DOMContentLoaded", function () {
       true
     );
   });
+
   document.body.addEventListener("click", function (event) {
     if (!compareMode) return;
     let nodeEl = event.target.closest(".node");
@@ -485,7 +561,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // --- Generation gap logic: max(steps from LCA to each node) ---
       const getPathToRoot = node => {
         let path = [];
         while (node) {
@@ -566,7 +641,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const cookie = document.cookie.split(";").find((c) => c.trim().startsWith("csrftoken="));
     return cookie ? cookie.split("=")[1] : "";
   }
-
   document.getElementById("reset-zoom")?.addEventListener("click", resetZoom);
   document.getElementById("reload-tree")?.addEventListener("click", () => {
     loadTreeData();
@@ -577,11 +651,21 @@ document.addEventListener("DOMContentLoaded", function () {
   function loadTreeData() {
     fetch("/data/")
       .then((res) => res.json())
-      .then((data) => renderTree(data));
+      .then((data) => {
+        rootData = data;
+        // Collapse all except root at first load
+       d3root = d3.hierarchy(data, d =>
+  d.children || (d._children || null)
+);
+
+        if (d3root.children) d3root.children.forEach(collapse);
+        renderTree(rootData);
+      });
   }
 
   loadTreeData();
-});
-document.getElementById('add-name').onclick = function() {
+
+  document.getElementById('add-name').onclick = function() {
     window.location.href = this.dataset.addMemberUrl;
-};
+  };
+});

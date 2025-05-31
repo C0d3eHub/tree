@@ -1,4 +1,4 @@
-    {% extends 'treeapp/base.html' %}
+{% extends 'treeapp/base.html' %}
 {% load static %}
 
 {% block title %}Help & Contact Us{% endblock %}
@@ -84,13 +84,39 @@
     font-weight: 500;
     transition: background 0.2s, box-shadow 0.2s;
     cursor: pointer;
-    margin-right: 6px;
     box-shadow: 0 1px 6px rgba(155, 89, 182, 0.12);
-    display: block;
-    margin: 0 auto;
 }
+
 .btn-submit:hover, .btn-submit:focus {
-    background: #7d3c98;
+    background: #884ea0;
+}
+
+.btn-cancel {
+    background: #eaeaea;
+    color: #5c5c5c;
+    padding: 10px 32px;
+    border: none;
+    border-radius: 21px;
+    font-size: 1em;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-cancel:hover, .btn-cancel:focus {
+    background: #d5d5d5;
+    color: #3c3c3c;
+    text-decoration: none;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 1.2em;
 }
 .success-message {
     background: #d4efdf;
@@ -104,10 +130,20 @@
     box-shadow: 0 1px 11px rgba(39, 174, 96, 0.10);
 }
 @media (max-width: 500px) {
-    .help-section { padding: 0.6rem 0.1rem 1rem 0.1rem; }
-    .contact-info h2 { font-size: 1.2rem; }
+    .help-section { padding: 0.6rem 0.5rem 1rem 0.5rem; }
+    .contact-info h2 { font-size: 1.3rem; }
+    .btn-submit, .btn-cancel {
+        width: 100%;
+        text-align: center;
+    }
+    .form-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
 }
 </style>
+
 <div class="help-section">
     <div class="contact-info">
         <h2>Contact Us</h2>
@@ -118,14 +154,17 @@
             <b>Phone:</b> <a class="contact-link" href="tel:{{ contact_phone }}">{{ contact_phone }}</a>
         </p>
     </div>
+
     <div class="request-form-title">
         Or fill out the form below to request anything or contact us directly:
     </div>
+
     {% if submitted %}
-        <div class="success-message" id="successMsg">   
+        <div class="success-message" id="successMsg">
             Thank you for reaching out!<br>Your message has been sent successfully.<br>We will contact you soon.
         </div>
     {% endif %}
+
     <form method="post" autocomplete="off" novalidate>
         {% csrf_token %}
         <div class="form-group">
@@ -152,16 +191,21 @@
                 <div style="color:#c0392b; font-size:0.93em;">{{ error }}</div>
             {% endfor %}
         </div>
-        <button type="submit" class="btn-submit">Send</button>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn-submit">Send</button>
+            <a href="{% url 'index' %}" class="btn-cancel">Cancel</a>
+        </div>
     </form>
 </div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     var msg = document.getElementById("successMsg");
     if (msg) {
         setTimeout(function() {
             msg.style.display = "none";
-        }, 20000); // 20000 ms = 20 seconds
+        }, 20000); // 20 seconds
     }
 });
 </script>

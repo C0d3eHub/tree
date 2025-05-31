@@ -10,7 +10,10 @@
     <button id="reload-tree">Reload Tree</button>
     <button id="comparenode-btn" style="display:none;">Compare</button>
     <button id="correctionname-btn" style="display:none;">Correction</button>
-    
+    <button id="expand-all" class="tree-control-btn">Expand All</button>
+    <button id="collapse-all" class="tree-control-btn">Collapse All</button>
+
+
 </div>
   
 
@@ -27,7 +30,7 @@
 <script>
   const treeData = {{ tree_data|safe }};
 </script>
-<script src="{% static 'treeapp/js/tree.js' %}"></script>
+<script src="{% static 'treeapp/js/fixed-tree.js' %}"></script>
 <script>
   
 </script>

@@ -100,25 +100,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Collapse/expand logic
   function collapse(d) {
-  if (d.children) {
-    d._children = d.children;
-    d._children.forEach(collapse);
-    d.children = null;
+    if (d.children) {
+      d._children = d.children;
+      d._children.forEach(collapse);
+      d.children = null;
+    }
   }
-}
-
   function expand(d) {
-  if (d._children) {
-    d.children = d._children;
-    d.children.forEach(expand);
-    d._children = null;
+    if (d._children) {
+      d.children = d._children;
+      d.children.forEach(expand);
+      d._children = null;
+    }
   }
-}
-
 
   function renderTree(data, focusIdOrName, preserveZoom = false) {
     d3root = d3.hierarchy(data, d => d.children || d._children);
-
 
     // Measure text
     const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
@@ -183,22 +180,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const visibleNodes = [];
     function collectVisible(node) {
-  visibleNodes.push(node);
-  if (node.children)
-    node.children.forEach(collectVisible);
-}
-
+      visibleNodes.push(node);
+      if (node.children)
+        node.children.forEach(collectVisible);
+    }
     collectVisible(root);
 
     const visibleLinks = [];
     visibleNodes.forEach(node => {
-  if (node.children) {
-    node.children.forEach(child => {
-      visibleLinks.push({ source: node, target: child });
+      if (node.children) {
+        node.children.forEach(child => {
+          visibleLinks.push({ source: node, target: child });
+        });
+      }
     });
-  }
-});
-
 
     g.selectAll(".link").data(visibleLinks)
       .enter().append("path")
@@ -272,66 +267,83 @@ document.addEventListener("DOMContentLoaded", function () {
       .text(d => d.data.name);
 
     // Add collapse/expand button (➕/➖) outside to the right of the node
-    nodes
-      .filter(d => d.data.children || d.data._children)
+   // Add collapse/expand button (➕/➖) outside to the right of the node
+   nodes
+     .filter(d => {
+       return (d.data.children && d.data.children.length > 0) || 
+              (d.data._children && d.data._children.length > 0);
+     })
+     .append("g")
+     .attr("class", "collapse-toggle")
+     .each(function(d) {
+       const boxWidth = Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
+       
+       // Position button at the top right of the arrowhead
+       const x = boxWidth / 2 - 20; // 3px right of arrowhead
+       const y = -27; // Move up by 15px to position at the top
+       
+       const group = d3.select(this)
+         .attr("transform", `translate(${x},${y})`)
+         .style("pointer-events", "all");
 
-      .append("g")
-      .attr("class", "collapse-toggle")
-      .each(function(d) {
-        const boxWidth = Math.max(d.data._textWidth + NODE_HORIZ_PADDING, MIN_NODE_WIDTH);
-        const x = boxWidth / 2 + 22;
-        const y = 0;
+       const circle = group.append("circle")
+         .attr("r", 8) // Make even smaller
+         .attr("fill", "#fff")
+         .attr("stroke", "#666")
+         .attr("stroke-width", 1.5)
+         .attr("filter", "url(#button-shadow)")
+         .attr("cursor", "pointer");
 
-        const group = d3.select(this)
-          .attr("transform", `translate(${x},${y})`)
-          .style("pointer-events", "all");
-
-        const circle = group.append("circle")
-          .attr("r", 13)
-          .attr("fill", "#fff")
-          .attr("stroke", "#666")
-          .attr("stroke-width", 1.5)
-          .attr("filter", "url(#button-shadow)")
-          .attr("cursor", "pointer");
-
-        const sign = group.append("text")
-          .attr("text-anchor", "middle")
-          .attr("dy", 8)
-          .attr("font-size", 20)
-          .attr("font-family", "sans-serif")
-          .text(() => {
-  if (d.data.children) return "➖";
-  if (d.data._children) return "➕";
-  return "";
-});
+       const sign = group.append("text")
+         .attr("text-anchor", "middle")
+         .attr("dy", 4) // Adjusted for smaller circle
+         .attr("font-size", 14) // Smaller font size
+         .attr("font-family", "sans-serif")
+         .text(() => {
+           if (d.data.children && d.data.children.length > 0) return "➖";
+           if (d.data._children && d.data._children.length > 0) return "➕";
+           return "";
+         });
+       
+       // Rest of the code remains the same
 
 
+       function collapseExpandHandler(event) {
+         event.preventDefault();
+         event.stopPropagation();
+         
+         // Collapse: only if children are present
+         if (d.data.children && d.data.children.length > 0) {
+           // Store children in _children
+           d.data._children = d.data.children;
+           // Clear children
+           d.data.children = [];
+           console.log("Collapsed node:", d.data.name);
+           
+           // Re-render the tree
+           renderTree(rootData, d.data.id, true);
+           return;
+         }
+         
+         // Expand: only if _children are present
+         if (d.data._children && d.data._children.length > 0) {
+           // Restore children from _children
+           d.data.children = d.data._children;
+           // Clear _children
+           d.data._children = [];
+           console.log("Expanded node:", d.data.name);
+           
+           // Re-render the tree
+           renderTree(rootData, d.data.id, true);
+           return;
+         }
+       }
 
-        function collapseExpandHandler(event) {
-          event.preventDefault();
-          event.stopPropagation();
-          // Collapse: only if children are present
-          if (Array.isArray(d.data.children) && d.data.children.length > 0) {
-            d.data._children = d.data.children;
-            d.data.children = null;
-            console.log("Collapsed node:", d.data.name);
-            renderTree(rootData, d.data.id, true);
-            return;
-          }
-          // Expand: only if _children are present
-          if (Array.isArray(d.data._children) && d.data._children.length > 0) {
-            d.data.children = d.data._children;
-            d.data._children = null;
-            console.log("Expanded node:", d.data.name);
-            renderTree(rootData, d.data.id, true);
-            return;
-          }
-        }
+       group.on("click touchstart", collapseExpandHandler);
+       circle.on("click touchstart", collapseExpandHandler);
+       sign.on("click touchstart", collapseExpandHandler);
+     });
 
-        group.on("click touchstart", collapseExpandHandler);
-        circle.on("click touchstart", collapseExpandHandler);
-        sign.on("click touchstart", collapseExpandHandler);
-      });
 
     // Node click event (after +/- button to avoid highlight on collapse/expand)
     nodes.on("click", function(event, d) {
@@ -358,8 +370,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ...rest of your code unchanged (highlightSpineAndSubtree, resetHighlight, compare/correction/modal logic etc)
-
   function highlightSpineAndSubtree(selectedNode) {
     highlightMode = true;
     let spine = [];
@@ -379,7 +389,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let subtree = [];
     selectedNode.each(n => subtree.push(n));
-    let subtreeRoot = d3.hierarchy(selectedNode.data, d => (Array.isArray(d.children) && d.children.length > 0) ? d.children : (Array.isArray(d._children) && d._children.length > 0 ? d._children : null));
+    let subtreeRoot = d3.hierarchy(selectedNode.data, d => d.children || d._children);
     const tempSvg = d3.select("body").append("svg").style("visibility", "hidden");
     (function recMeasure(node) {
       const textElem = tempSvg.append("text")
@@ -633,25 +643,87 @@ document.addEventListener("DOMContentLoaded", function () {
     resetHighlight();
     selectedNode = null;
   });
-
-  function loadTreeData() {
-    fetch("/data/")
-      .then((res) => res.json())
-      .then((data) => {
-        rootData = data;
-        // Collapse all except root at first load
-       d3root = d3.hierarchy(data, d =>
-  d.children || (d._children || null)
-);
-
-        if (d3root.children) d3root.children.forEach(collapse);
-        renderTree(rootData);
-      });
+  // expand all nodes function
+function expandAll(node) {
+  if (node._children && node._children.length > 0) {
+    node.children = node._children;
+    node._children = [];
   }
+  if (node.children) {
+    node.children.forEach(expandAll);
+  }
+}
+document.getElementById("expand-all")?.addEventListener("click", () => {
+  console.log("Expanding all nodes");
+  expandAll(rootData);
+  renderTree(rootData);
+});
+//collapse all nodes function
+// Add this function inside your DOMContentLoaded function
+function collapseAll(node) {
+  if (node.children && node.children.length > 0) {
+    node._children = node.children;
+    node.children = [];
+    node._children.forEach(collapseAll);
+  } else if (node._children) {
+    node._children.forEach(collapseAll);
+  }
+}
+
+// Add this event listener inside your DOMContentLoaded function
+document.getElementById("collapse-all")?.addEventListener("click", () => {
+  console.log("Collapsing all nodes");
+  // Keep root node expanded, but collapse all its children
+  if (rootData.children && rootData.children.length > 0) {
+    rootData.children.forEach(collapseAll);
+  }
+  renderTree(rootData);
+});
+function loadTreeData() {
+  fetch("/data/")
+    .then((res) => res.json())
+    .then((data) => {
+      rootData = data;
+      
+      // Create hierarchy without collapsing any nodes
+      d3root = d3.hierarchy(rootData, d => d.children || d._children);
+      renderTree(rootData);
+    });
+}
+
+//   function loadTreeData() {
+//   fetch("/data/")
+//     .then((res) => res.json())
+//     .then((data) => {
+//       rootData = data;
+      
+//       // Collapse all nodes beyond depth 4
+//       function collapseDeep(node, depth) {
+//         if (depth >= 4 && node.children) {
+//           node._children = node.children;
+//           node.children = [];
+//         } else if (node.children) {
+//           node.children.forEach(child => collapseDeep(child, depth + 1));
+//         }
+//       }
+      
+//       collapseDeep(rootData, 0);
+      
+//       // Create hierarchy
+//       d3root = d3.hierarchy(rootData, d => d.children || d._children);
+//       renderTree(rootData);
+//     });
+// }
+
 
   loadTreeData();
 
   document.getElementById('add-name').onclick = function() {
     window.location.href = this.dataset.addMemberUrl;
   };
+
+
+  
+
 });
+
