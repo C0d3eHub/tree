@@ -1,0 +1,242 @@
+{% extends 'treeapp/base.html' %}
+{% block content %}
+<style>
+.page-title {
+    text-align: center;
+    margin: 30px 0;
+    color: #ff9800;
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+}
+
+.instructions-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.instruction-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    overflow: hidden;
+    border: 1px solid #eee;
+}
+
+.instruction-header {
+    background: linear-gradient(135deg, #ff9800, #ffb74d);
+    color: white;
+    padding: 15px 20px;
+}
+
+.instruction-title {
+    font-size: 1.4rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+.instruction-content {
+    padding: 20px;
+    color: #333;
+    line-height: 1.6;
+}
+
+.instruction-content ul {
+    padding-left: 20px;
+}
+
+.instruction-content li {
+    margin-bottom: 10px;
+}
+
+.instruction-image {
+    max-width: 100%;
+    height: auto;
+    margin: 15px 0;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.instruction-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin: 40px auto;
+}
+
+.instruction-feature-card {
+    flex: 1;
+    min-width: 280px;
+    max-width: 380px;
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.instruction-feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+.instruction-feature-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #ff9800, #ffb74d);
+    color: white;
+    text-align: center;
+}
+
+.instruction-feature-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.instruction-feature-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.instruction-feature-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.instruction-feature-body p {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.instruction-feature-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #ff9800;
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.instruction-feature-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+</style>
+
+<div class="page-title">
+    <span style="font-size: 2.5rem;">📋</span><br>
+    Instructions
+</div>
+
+<div class="instructions-container">
+    <div class="instruction-card">
+        <div class="instruction-header">
+            <h2 class="instruction-title">How to Navigate the Family Tree</h2>
+        </div>
+        <div class="instruction-content">
+            <p>Follow these steps to effectively navigate through the family tree:</p>
+            <ul>
+                <li>Click on <strong>🌲 Tree</strong> in the navigation menu to view the complete family tree.</li>
+                <li>Use your mouse to pan around the tree by clicking and dragging.</li>
+                <li>Zoom in and out using the mouse wheel or pinch gestures on touch devices.</li>
+                <li>Click on any family member to view their details.</li>
+                <li>Right-click on a member to track their specific branch of the family tree.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="instruction-card">
+        <div class="instruction-header">
+            <h2 class="instruction-title">Updating Your Information</h2>
+        </div>
+        <div class="instruction-content">
+            <p>To update your personal information in the family tree:</p>
+            <ol>
+                <li>Log in to your account.</li>
+                <li>Navigate to <strong>👪 My Tree</strong> in the menu.</li>
+                <li>Click on the <strong>ℹ️ info icon</strong> next to your name.</li>
+                <li>Select <strong>Edit Member</strong> from the options.</li>
+                <li>Update your information including name, birth year, and photo.</li>
+                <li>Click Save to apply your changes.</li>
+            </ol>
+            <p>Note: Your updates may require admin approval before they appear in the main tree.</p>
+        </div>
+    </div>
+    
+    <div class="instruction-card">
+        <div class="instruction-header">
+            <h2 class="instruction-title">Submitting Corrections</h2>
+        </div>
+        <div class="instruction-content">
+            <p>If you notice incorrect information in the family tree:</p>
+            <ol>
+                <li>Click on the name of the family member with incorrect information.</li>
+                <li>Select the "Submit Correction" option.</li>
+                <li>Fill out the correction form with the accurate information.</li>
+                <li>Submit your correction for review.</li>
+            </ol>
+            <p>An administrator will review your submission and make the necessary changes if approved.</p>
+        </div>
+    </div>
+    
+    <div class="instruction-card">
+        <div class="instruction-header">
+            <h2 class="instruction-title">Adding New Family Members</h2>
+        </div>
+        <div class="instruction-content">
+            <p>To request adding a new family member to the tree:</p>
+            <ol>
+                <li>Navigate to the family tree view.</li>
+                <li>Click on the parent to whom you want to add a child.</li>
+                <li>Select "Add Member" from the options.</li>
+                <li>Fill out the form with the new member's information.</li>
+                <li>Submit your request for admin approval.</li>
+            </ol>
+            <p>Note: Only authenticated users can submit requests to add new members.</p>
+        </div>
+    </div>
+    
+    <!-- Instruction Feature Cards -->
+    <h3 style="text-align: center; margin-top: 40px; color: #ff9800;">Quick Guides</h3>
+    <div class="instruction-cards">
+        <div class="instruction-feature-card">
+            <div class="instruction-feature-header">
+                <div class="instruction-feature-icon">🔍</div>
+                <h3>Navigation</h3>
+            </div>
+            <div class="instruction-feature-body">
+                <p>Learn how to navigate and explore the family tree effectively.</p>
+                <a href="#" class="instruction-feature-btn">View Guide</a>
+            </div>
+        </div>
+        
+        <div class="instruction-feature-card">
+            <div class="instruction-feature-header">
+                <div class="instruction-feature-icon">✏️</div>
+                <h3>Editing</h3>
+            </div>
+            <div class="instruction-feature-body">
+                <p>Step-by-step instructions for updating your information in the tree.</p>
+                <a href="#" class="instruction-feature-btn">View Guide</a>
+            </div>
+        </div>
+        
+        <div class="instruction-feature-card">
+            <div class="instruction-feature-header">
+                <div class="instruction-feature-icon">📱</div>
+                <h3>Mobile Use</h3>
+            </div>
+            <div class="instruction-feature-body">
+                <p>Tips for using the family tree application on mobile devices.</p>
+                <a href="#" class="instruction-feature-btn">View Guide</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

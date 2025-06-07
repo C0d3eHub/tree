@@ -1,0 +1,208 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+{% block title %}Registration Successful | Family Tree{% endblock %}
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-icon">✅</div>
+        <h2>Registration Successful!</h2>
+        
+        <div class="success-message">
+            <p>Thank you for registering, <strong>{{ name }}</strong>!</p>
+            
+            {% if email_verified %}
+            <div class="verified-badge">
+                <span class="verified-icon">✓</span> Email Verified
+            </div>
+            {% else %}
+            <div class="verification-note">
+                <p>We've sent a verification link to <strong>{{ email }}</strong>.</p>
+                <p>Please check your inbox and click the link to verify your email address.</p>
+            </div>
+            {% endif %}
+            
+            <div class="account-details">
+                <h3>Account Details</h3>
+                <ul>
+                    <li><strong>Username:</strong> {{ username }}</li>
+                    <li><strong>Name:</strong> {{ name }}</li>
+                    <li><strong>Father's Name:</strong> {{ father_name }}</li>
+                    <li><strong>Email:</strong> {{ email }}</li>
+                </ul>
+            </div>
+            
+            <div class="approval-note">
+                <p><strong>Important:</strong> Your account requires admin approval before you can access your family tree.</p>
+                <p>You will be notified once your account is approved.</p>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{% url 'login' %}" class="btn-primary">Go to Login</a>
+            <a href="{% url 'index' %}" class="btn-secondary">Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.success-container {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.success-card {
+    width: 100%;
+    max-width: 500px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 3px 24px 0 rgba(37, 80, 145, 0.15);
+    padding: 2.5rem 2rem;
+    text-align: center;
+}
+
+.success-icon {
+    font-size: 3.5rem;
+    color: #4CAF50;
+    margin-bottom: 1rem;
+}
+
+.success-card h2 {
+    color: #1976d2;
+    margin-bottom: 1.5rem;
+}
+
+.success-message {
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin: 1rem 0;
+    font-weight: 600;
+}
+
+.verified-icon {
+    background: #2e7d32;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    font-size: 0.8rem;
+}
+
+.verification-note {
+    background: #fff8e1;
+    border-left: 4px solid #ffc107;
+    padding: 12px 16px;
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.account-details {
+    background: #f5f5f5;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+}
+
+.account-details h3 {
+    color: #333;
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+}
+
+.account-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.account-details li {
+    padding: 6px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.account-details li:last-child {
+    border-bottom: none;
+}
+
+.approval-note {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 12px 16px;
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.action-buttons {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg,#1976d2,#64b5f6);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.18s;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg,#1565c0,#42a5f5);
+}
+
+.btn-secondary {
+    background: #f5f5f5;
+    color: #333;
+    font-weight: bold;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.18s;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+@media (max-width: 600px) {
+    .success-card {
+        padding: 1.5rem 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary, .btn-secondary {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

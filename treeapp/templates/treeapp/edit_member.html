@@ -1,0 +1,374 @@
+{% extends "treeapp/base.html" %}
+{% block title %}Edit Family Member{% endblock %}
+{% load static %}
+{% block extra_head %}
+<script>
+  // Force mobile rendering
+  document.addEventListener('DOMContentLoaded', function() {
+    // Force redraw to ensure proper rendering on mobile
+    document.body.style.display = 'none';
+    setTimeout(function() {
+      document.body.style.display = '';
+    }, 10);
+  });
+</script>
+{% endblock %}
+{% block content %}
+<!-- Force mobile rendering -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Force redraw to ensure proper rendering on mobile
+    document.body.style.display = 'none';
+    setTimeout(function() {
+      document.body.style.display = '';
+    }, 10);
+  });
+</script>
+<div class="edit-member-container">
+  <div class="edit-member-card">
+    <div class="card-header">
+      <div class="header-icon">✏️</div>
+      <h2>Edit Family Member</h2>
+    </div>
+    
+    {% if member.photo %}
+    <div class="member-photo">
+      <img src="{{ member.photo.url }}" alt="{{ member.name }}">
+    </div>
+    {% endif %}
+    
+    {% if message %}
+    <div class="user-message">
+      <div style="background-color: #e3f2fd; color: #0d47a1; padding: 12px 20px; 
+                  border-radius: 8px; margin: 15px auto; text-align: center;
+                  box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: 500;">
+        {{ message }}
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if is_superuser %}
+    <div class="admin-message">
+      <div style="background-color: #fbe9e7; color: #c62828; padding: 12px 20px; 
+                  border-radius: 8px; margin: 15px auto; text-align: center;
+                  box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: 500;">
+        Admin mode: You have full editing permissions for all family members.
+      </div>
+    </div>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data" class="edit-form">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      
+      <div class="input-group">
+        <label for="id_name">Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+          <div class="alert-error">{{ form.name.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="input-row">
+        <div class="input-group">
+          <label for="id_year_of_birth">Year of Birth</label>
+          {{ form.year_of_birth }}
+          {% if form.year_of_birth.errors %}
+            <div class="alert-error">{{ form.year_of_birth.errors|striptags }}</div>
+          {% endif %}
+        </div>
+        
+        <div class="input-group">
+          <label for="id_year_of_death">Year of Death(if)</label>
+          {{ form.year_of_death }}
+          {% if form.year_of_death.errors %}
+            <div class="alert-error">{{ form.year_of_death.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="input-group photo-upload">
+        <label for="id_photo">
+          <span>Photo</span>
+          <small>Upload a new photo (optional)</small>
+        </label>
+        {{ form.photo }}
+        {% if form.photo.errors %}
+          <div class="alert-error">{{ form.photo.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="button-group">
+        <button type="submit" class="btn-primary">
+          <span class="btn-icon">💾</span> Save Changes
+        </button>
+        <a href="{% url 'my_family_tree' %}" class="btn-secondary">
+          <span class="btn-icon">↩️</span> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .edit-member-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    min-height: 70vh;
+  }
+  
+  .edit-member-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    padding: 30px;
+    width: 100%;
+    max-width: 500px;
+    transition: transform 0.3s ease;
+  }
+  
+  .edit-member-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    background: linear-gradient(135deg, #4CAF50, #2196F3);
+    margin: -30px -30px 25px -30px;
+    padding: 20px 30px;
+    border-radius: 16px 16px 0 0;
+    color: white;
+  }
+  
+  .header-icon {
+    font-size: 28px;
+    margin-right: 15px;
+    background: white;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  
+  .card-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  .member-photo {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  
+  .member-photo img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid #4CAF50;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  
+  .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .input-row {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .input-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .input-group label small {
+    font-weight: normal;
+    color: #666;
+    font-size: 0.8em;
+    margin-top: 4px;
+  }
+  
+  .input-group input[type="text"],
+  .input-group input[type="number"] {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .input-group input[type="text"]:focus,
+  .input-group input[type="number"]:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+    outline: none;
+  }
+  
+  .photo-upload input {
+    padding: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .btn-primary {
+    background: #4CAF50;
+    color: white;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background: #388E3C;
+    transform: translateY(-2px);
+  }
+  
+  .btn-secondary {
+    background: #f5f5f5;
+    color: #333;
+    border: none;
+    text-decoration: none;
+  }
+  
+  .btn-secondary:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+  }
+  
+  .btn-icon {
+    margin-right: 8px;
+    font-size: 18px;
+  }
+  
+  .alert-error {
+    color: #d32f2f;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  
+  /* Responsive styles */
+  @media (max-width: 600px) {
+    .edit-member-container {
+      padding: 10px;
+      min-height: 60vh;
+    }
+    
+    .edit-member-card {
+      padding: 20px;
+      border-radius: 12px;
+      width: 95%;
+      max-width: 100%;
+    }
+    
+    .card-header {
+      margin: -20px -20px 20px -20px;
+      padding: 15px 20px;
+      border-radius: 12px 12px 0 0;
+    }
+    
+    .header-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 22px;
+    }
+    
+    .card-header h2 {
+      font-size: 20px;
+    }
+    
+    .input-row {
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .button-group {
+      flex-direction: column;
+    }
+    
+    .btn-primary, .btn-secondary {
+      width: 100%;
+    }
+    
+    .input-group input[type="text"],
+    .input-group input[type="number"],
+    .input-group input[type="file"] {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+  }
+  
+  /* Fix for mobile devices */
+  @media (max-width: 480px) {
+    .edit-member-container {
+      padding: 5px;
+    }
+    
+    .edit-member-card {
+      padding: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-header {
+      margin: -15px -15px 15px -15px;
+      padding: 12px 15px;
+    }
+    
+    .header-icon {
+      width: 36px;
+      height: 36px;
+      font-size: 20px;
+      margin-right: 10px;
+    }
+    
+    .card-header h2 {
+      font-size: 18px;
+    }
+    
+    .member-photo img {
+      width: 100px;
+      height: 100px;
+    }
+  }
+</style>
+{% endblock %}

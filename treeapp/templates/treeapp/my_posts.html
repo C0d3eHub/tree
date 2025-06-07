@@ -1,0 +1,62 @@
+{% extends 'treeapp/base.html' %}
+{% block title %}My Posts{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">My Posts</h1>
+    
+    {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-info{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <div class="mb-4">
+        <a href="{% url 'add_post' %}" class="btn btn-primary">Create New Post</a>
+    </div>
+    
+    {% if posts %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in posts %}
+                        <tr>
+                            <td>{{ post.title }}</td>
+                            <td>{{ post.get_category_display }}</td>
+                            <td>{{ post.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="badge {% if post.is_approved %}badge-success{% else %}badge-warning{% endif %}">
+                                    {% if post.is_approved %}Approved{% else %}Pending Approval{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'view_post' post.id %}" class="btn btn-sm btn-info">View</a>
+                                    <a href="{% url 'edit_post' post.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            You haven't created any posts yet. <a href="{% url 'add_post' %}">Create your first post</a>.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Minimal D3 Collapsible Tree</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .node rect {
+      cursor: pointer;
+    }
+
+    .link {
+      fill: none;
+      stroke: #555;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="tree-container" style="width:100vw;height:100vh;">
+    <svg id="tree-svg" width="1000" height="1000"></svg>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@6"></script>
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const svg = d3.select("#tree-svg");
+    const g = svg.append("g");
+
+    const NODE_W = 100, NODE_H = 40, NODE_MARGIN_X = 24, NODE_MARGIN_Y = 60;
+    const treeLayout = d3.tree().nodeSize([NODE_W + NODE_MARGIN_X, NODE_H + NODE_MARGIN_Y]);
+
+    // Get data from backend
+    const treeData = {{ tree_data|tojson|safe }};
+
+    let d3root = d3.hierarchy(treeData, d => d.children);
+    d3root.x0 = 0;
+    d3root.y0 = 0;
+
+    function collapse(d) {
+      if (d.children) {
+        d._children = d.children;
+        d._children.forEach(collapse);
+        d.children = null;
+      }
+    }
+
+    d3root.children.forEach(collapse);
+
+    function update(source) {
+      treeLayout(d3root);
+      const nodes = d3root.descendants();
+      const links = d3root.links();
+      g.selectAll("*").remove();
+
+      g.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("path")
+        .attr("class", "link")
+        .attr("d", d => `
+          M${d.source.x},${d.source.y}
+          V${d.target.y - NODE_H / 2}
+          H${d.target.x}
+          V${d.target.y}
+        `);
+
+      const node = g.selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.x},${d.y})`)
+        .on("click", function(event, d) {
+          if (d.children) {
+            d._children = d.children;
+            d.children = null;
+          } else if (d._children) {
+            d.children = d._children;
+            d._children = null;
+          }
+          update(d);
+        });
+
+      node.append("rect")
+        .attr("x", -NODE_W / 2)
+        .attr("y", -NODE_H / 2)
+        .attr("width", NODE_W)
+        .attr("height", NODE_H)
+        .attr("rx", 10)
+        .attr("fill", "#3498db");
+
+      node.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", 5)
+        .attr("fill", "#fff")
+        .text(d => d.data.name);
+
+      const bounds = g.node().getBBox();
+      const svgWidth = +svg.attr("width"), svgHeight = +svg.attr("height");
+      const offsetX = svgWidth / 2 - (bounds.x + bounds.width / 2);
+      const offsetY = svgHeight / 2 - (bounds.y + bounds.height / 2);
+      g.attr("transform", `translate(${offsetX},${offsetY})`);
+    }
+
+    update(d3root);
+  });
+</script>
+
+</body>
+</html>

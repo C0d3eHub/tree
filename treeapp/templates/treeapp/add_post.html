@@ -1,0 +1,184 @@
+{% extends 'treeapp/base.html' %}
+{% block title %}Add New Post{% endblock %}
+
+{% block content %}
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.form-title {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #9c27b0;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    border-color: #9c27b0;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.2);
+}
+
+.form-text {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+.btn-submit {
+    background: linear-gradient(90deg, #9c27b0, #ba68c8);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(90deg, #8e24aa, #ab47bc);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+}
+
+.success-message {
+    background-color: #e3fcef;
+    color: #00b894;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.error-message {
+    background-color: #fdedec;
+    color: #e74c3c;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.category-news {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.category-event {
+    background-color: #fff8e1;
+    color: #ff8f00;
+}
+
+.category-history {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+.category-other {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+</style>
+
+<div class="form-container">
+    <h1 class="form-title">
+        <span style="font-size: 2rem;">📝</span><br>
+        Create New Post
+    </h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="{% if message.tags == 'success' %}success-message{% else %}error-message{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% if success %}
+        <div class="success-message">
+            Your post "{{ post.title }}" has been submitted successfully!<br>
+            It will be reviewed by an administrator before it appears on the site.
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{% url 'add_post' %}" style="display: inline-block; margin-right: 15px; color: #9c27b0; text-decoration: none; font-weight: 600;">
+                Create Another Post
+            </a>
+            <a href="{% url 'my_posts' %}" style="display: inline-block; color: #9c27b0; text-decoration: none; font-weight: 600;">
+                View My Posts
+            </a>
+        </div>
+    {% else %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.title.id_for_label }}">Post Title</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="error-message">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+                <div class="form-text">Select the category that best fits your post.</div>
+                {% if form.category.errors %}
+                    <div class="error-message">{{ form.category.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="{{ form.content.id_for_label }}">Content</label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                    <div class="error-message">{{ form.content.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="submit" class="btn-submit">Submit Post</button>
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

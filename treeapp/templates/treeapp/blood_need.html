@@ -1,0 +1,234 @@
+{% extends 'treeapp/base.html' %}
+
+{% block title %}Request Blood{% endblock %}
+
+{% block content %}
+<div class="blood-form-container">
+    <div class="form-card">
+        <div class="card-header">
+            <div class="header-icon">🩸</div>
+            <h2>Request Blood</h2>
+            <p>Find donors who can help</p>
+        </div>
+        
+        <div class="card-body">
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <div class="form-error">{{ form.name.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.phone.id_for_label }}">Phone Number</label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}
+                    <div class="form-error">{{ form.phone.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.blood_group.id_for_label }}">Blood Group Needed</label>
+                    {{ form.blood_group }}
+                    {% if form.blood_group.errors %}
+                    <div class="form-error">{{ form.blood_group.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.urgency.id_for_label }}">Urgency Level</label>
+                    {{ form.urgency }}
+                    {% if form.urgency.errors %}
+                    <div class="form-error">{{ form.urgency.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.needed_where.id_for_label }}">Needed Where (Hospital/Location)</label>
+                    {{ form.needed_where }}
+                    {% if form.needed_where.errors %}
+                    <div class="form-error">{{ form.needed_where.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.address.id_for_label }}">Address (Optional)</label>
+                    {{ form.address }}
+                    {% if form.address.errors %}
+                    <div class="form-error">{{ form.address.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Submit Request</button>
+                    <a href="{% url 'blood_bank' %}" class="btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.blood-form-container {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.form-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(45deg, #e53935, #ff5252);
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+.header-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.card-header h2 {
+    margin: 0 0 5px 0;
+    font-size: 1.8rem;
+}
+
+.card-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+.messages-container {
+    margin-bottom: 20px;
+}
+
+.alert {
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.alert-success {
+    background-color: #c8e6c9;
+    color: #2e7d32;
+}
+
+.alert-error {
+    background-color: #ffcdd2;
+    color: #c62828;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: #e53935;
+    box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.2);
+    outline: none;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-error {
+    color: #c62828;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.btn-submit, .btn-cancel {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.btn-submit {
+    background: linear-gradient(45deg, #e53935, #ff5252);
+    color: white;
+    border: none;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(45deg, #d32f2f, #ff1744);
+    transform: translateY(-2px);
+}
+
+.btn-cancel {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-cancel:hover {
+    background: #eeeeee;
+}
+
+@media (max-width: 480px) {
+    .card-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

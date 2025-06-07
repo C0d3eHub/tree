@@ -1,0 +1,212 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Help & Contact Us{% endblock %}
+
+{% block content %}
+<style>
+.help-section {
+    max-width: 520px;
+    margin: 2.5rem auto;
+    background: linear-gradient(110deg, #f8fafc 70%, #f3e9ff 100%);
+    border-radius: 18px;
+    box-shadow: 0 2px 16px rgba(132, 90, 255, 0.10);
+    padding: 2.5rem 2.3rem 2.2rem 2.3rem;
+    font-family: 'Segoe UI', 'Noto Sans', sans-serif;
+}
+@media (max-width: 700px) {
+    .help-section { padding: 1.3rem 0.8rem 1.2rem 0.8rem; }
+}
+.contact-info {
+    margin-bottom: 1.6rem;
+    text-align: center;
+}
+.contact-info h2 {
+    color: #7b3fa0;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+.contact-info p {
+    margin: 0.35em 0;
+    color: #555;
+    font-size: 1.09rem;
+    letter-spacing: 0.01em;
+}
+.contact-link {
+    color: #27ae60;
+    text-decoration: none;
+    font-weight: 500;
+}
+.contact-link:hover {
+    text-decoration: underline;
+}
+.request-form-title {
+    margin-top: 1.7rem;
+    margin-bottom: 1.05rem;
+    color: #7b3fa0;
+    font-weight: bold;
+    font-size: 1.2rem;
+    letter-spacing: 0.01em;
+    text-align: center;
+}
+.form-group label {
+    font-weight: 500;
+    color: #6c3483;
+    margin-bottom: 0.25em;
+    display: block;
+}
+.form-control {
+    width: 100%;
+    border: 1.5px solid #e1e4eb;
+    border-radius: 7px;
+    padding: 10px 13px;
+    font-size: 1em;
+    margin-bottom: 1.1em;
+    background: #fcfaff;
+    color: #7d3c98;
+    font-weight: 500;
+    transition: border 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 4px rgba(155, 89, 182, 0.07);
+    outline: none;
+}
+.form-control:focus {
+    border: 2px solid #9b59b6;
+    background: #f7f6fb;
+    color: #5e3370;
+}
+.btn-submit {
+    background: #9b59b6;
+    color: white;
+    padding: 10px 32px;
+    border: none;
+    border-radius: 21px;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    box-shadow: 0 1px 6px rgba(155, 89, 182, 0.12);
+}
+
+.btn-submit:hover, .btn-submit:focus {
+    background: #884ea0;
+}
+
+.btn-cancel {
+    background: #eaeaea;
+    color: #5c5c5c;
+    padding: 10px 32px;
+    border: none;
+    border-radius: 21px;
+    font-size: 1em;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-cancel:hover, .btn-cancel:focus {
+    background: #d5d5d5;
+    color: #3c3c3c;
+    text-decoration: none;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 1.2em;
+}
+.success-message {
+    background: #d4efdf;
+    color: #229954;
+    border-radius: 7px;
+    padding: 13px 18px;
+    text-align: center;
+    margin-bottom: 1.5em;
+    font-size: 1.13em;
+    font-weight: bold;
+    box-shadow: 0 1px 11px rgba(39, 174, 96, 0.10);
+}
+@media (max-width: 500px) {
+    .help-section { padding: 0.6rem 0.5rem 1rem 0.5rem; }
+    .contact-info h2 { font-size: 1.3rem; }
+    .btn-submit, .btn-cancel {
+        width: 100%;
+        text-align: center;
+    }
+    .form-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+}
+</style>
+
+<div class="help-section">
+    <div class="contact-info">
+        <h2>Contact Us</h2>
+        <p>
+            <b>Email:</b> <a class="contact-link" href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+        </p>
+        <p>
+            <b>Phone:</b> <a class="contact-link" href="tel:{{ contact_phone }}">{{ contact_phone }}</a>
+        </p>
+    </div>
+
+    <div class="request-form-title">
+        Or fill out the form below to request anything or contact us directly:
+    </div>
+
+    {% if submitted %}
+        <div class="success-message" id="successMsg">
+            Thank you for reaching out!<br>Your message has been sent successfully.<br>We will contact you soon.
+        </div>
+    {% endif %}
+
+    <form method="post" autocomplete="off" novalidate>
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.name.label_tag }}{{ form.name }}
+            {% for error in form.name.errors %}
+                <div style="color:#c0392b; font-size:0.93em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.email.label_tag }}{{ form.email }}
+            {% for error in form.email.errors %}
+                <div style="color:#c0392b; font-size:0.93em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.phone.label_tag }}{{ form.phone }}
+            {% for error in form.phone.errors %}
+                <div style="color:#c0392b; font-size:0.93em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.message.label_tag }}{{ form.message }}
+            {% for error in form.message.errors %}
+                <div style="color:#c0392b; font-size:0.93em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn-submit">Send</button>
+            <a href="{% url 'index' %}" class="btn-cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var msg = document.getElementById("successMsg");
+    if (msg) {
+        setTimeout(function() {
+            msg.style.display = "none";
+        }, 20000); // 20 seconds
+    }
+});
+</script>
+{% endblock %}

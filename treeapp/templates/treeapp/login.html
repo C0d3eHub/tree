@@ -1,0 +1,146 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+{% block title %}Login | Family Tree{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>🔐 Login</h2>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {% if error %}
+                <div class="alert-error">{{ error }}</div>
+            {% endif %}
+            
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="input-group">
+                <label for="id_username">Username</label>
+                <input type="text" name="username" id="id_username" required>
+            </div>
+            <div class="input-group">
+                <label for="id_password">Password</label>
+                <input type="password" name="password" id="id_password" required>
+            </div>
+            <button type="submit" class="btn-primary">Login</button>
+        </form>
+        <div class="auth-links">
+            <div class="auth-link">
+                <a href="{% url 'password_reset' %}">Forgot password?</a>
+            </div>
+            <div class="auth-link">
+                Don't have an account? <a href="{% url 'register' %}">Register here</a>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+.auth-container {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.auth-card {
+    width: 100%;
+    max-width: 360px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 3px 24px 0 rgba(37, 80, 145, 0.15);
+    padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+    margin: 2rem 0;
+    text-align: center;
+}
+.auth-card h2 {
+    margin-bottom: 1.6rem;
+    color: #1976d2;
+}
+.input-group {
+    margin-bottom: 1.2rem;
+    text-align: left;
+}
+.input-group label {
+    display: block;
+    font-weight: 600;
+    color: #3949ab;
+    margin-bottom: 0.4rem;
+}
+.input-group input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1.5px solid #cfd8dc;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #f4f7fa;
+    transition: border 0.2s;
+}
+.input-group input:focus {
+    border: 1.5px solid #1976d2;
+    outline: none;
+    background: #fff;
+}
+.btn-primary {
+    width: 100%;
+    background: linear-gradient(90deg,#1976d2,#64b5f6);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 0;
+    font-size: 1.07rem;
+    margin-top: 0.6rem;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.btn-primary:hover {
+    background: linear-gradient(90deg,#1565c0,#42a5f5);
+}
+.auth-links {
+    margin-top: 1.6rem;
+    color: #444;
+}
+.auth-link {
+    margin-bottom: 0.8rem;
+}
+.auth-link a {
+    color: #1976d2;
+    font-weight: 500;
+    text-decoration: none;
+}
+.alert-error {
+    color: #c62828;
+    background: #ffcdd2;
+    border-radius: 5px;
+    margin: 0.4rem 0 1rem 0;
+    padding: 10px;
+}
+.messages {
+    margin-bottom: 1.5rem;
+}
+.message {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+.message.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+.message.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+@media (max-width: 480px) {
+    .auth-card { max-width: 95vw; padding: 1.2rem; }
+}
+</style>
+{% endblock %}

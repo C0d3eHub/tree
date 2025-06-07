@@ -1,0 +1,591 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Gallery{% endblock %}
+
+{% block extra_head %}
+<style>
+    .gallery-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .gallery-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .gallery-header h1 {
+        color: #4a6bff;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .gallery-header p {
+        color: #636e72;
+        font-size: 1.1rem;
+    }
+    
+    .albums-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 50px;
+    }
+    
+    .album-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .album-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    }
+    
+    .album-thumbnail {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .album-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .album-card:hover .album-thumbnail img {
+        transform: scale(1.05);
+    }
+    
+    .album-info {
+        padding: 20px;
+    }
+    
+    .album-title {
+        margin: 0 0 10px 0;
+        font-size: 1.3rem;
+        color: #2d3436;
+    }
+    
+    .album-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #b2bec3;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
+    .album-description {
+        color: #636e72;
+        margin-bottom: 20px;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .album-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .album-btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .album-btn-primary {
+        background: #4a6bff;
+        color: white;
+    }
+    
+    .album-btn-secondary {
+        background: white;
+        color: #636e72;
+        border: 1px solid #dfe6e9;
+    }
+    
+    .album-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+    }
+    
+    /* Single Album View */
+    .album-header {
+        margin-bottom: 30px;
+    }
+    
+    .album-header h1 {
+        color: #2d3436;
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    
+    .album-header-meta {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        color: #636e72;
+        margin-bottom: 15px;
+    }
+    
+    .album-header-meta span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .album-header-description {
+        color: #636e72;
+        line-height: 1.6;
+        max-width: 800px;
+    }
+    
+    .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    .photo-item {
+        height: 200px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .photo-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .photo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .photo-item:hover img {
+        transform: scale(1.05);
+    }
+    
+    /* Lightbox */
+    .lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    
+    .lightbox-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
+    }
+    
+    .lightbox-img {
+        max-width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+    }
+    
+    .lightbox-caption {
+        position: absolute;
+        bottom: -40px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: white;
+        font-size: 1rem;
+    }
+    
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        z-index: 1001;
+    }
+    
+    .lightbox-prev,
+    .lightbox-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        z-index: 1001;
+        background: rgba(0, 0, 0, 0.3);
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .lightbox-prev {
+        left: 20px;
+    }
+    
+    .lightbox-next {
+        right: 20px;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        color: #b2bec3;
+    }
+    
+    .empty-state h2 {
+        color: #2d3436;
+        margin-bottom: 15px;
+    }
+    
+    .empty-state p {
+        color: #636e72;
+        margin-bottom: 0;
+    }
+    
+    @media (max-width: 768px) {
+        .albums-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+        
+        .photos-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+        
+        .photo-item {
+            height: 150px;
+        }
+        
+        .lightbox-prev,
+        .lightbox-next {
+            width: 40px;
+            height: 40px;
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gallery-container">
+    {% if album %}
+        <!-- Single Album View -->
+        <div class="album-header">
+            <h1>{{ album.title }}</h1>
+            <div class="album-header-meta">
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    {{ album.created_at|date:"F j, Y" }}
+                </span>
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    {{ album.user.username }}
+                </span>
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    {{ photos|length }} photos
+                </span>
+            </div>
+            
+            {% if album.description %}
+                <div class="album-header-description">
+                    {{ album.description }}
+                </div>
+            {% endif %}
+            
+            <div class="album-actions" style="margin-top: 20px;">
+                <a href="{% url 'gallery' %}" class="album-btn album-btn-secondary">Back to Gallery</a>
+                {% if can_edit %}
+                    <a href="{% url 'edit_album' album.id %}" class="album-btn album-btn-primary">Edit Album</a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="photos-grid">
+            {% for photo in photos %}
+                <div class="photo-item" data-index="{{ forloop.counter0 }}">
+                    <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:album.title }}">
+                </div>
+            {% empty %}
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-icon">🖼️</div>
+                    <h2>No Photos</h2>
+                    <p>This album doesn't have any photos yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Lightbox -->
+        <div class="lightbox" id="lightbox">
+            <div class="lightbox-content">
+                <img src="" alt="" class="lightbox-img" id="lightbox-img">
+                <div class="lightbox-caption" id="lightbox-caption"></div>
+            </div>
+            <div class="lightbox-close" id="lightbox-close">×</div>
+            <div class="lightbox-prev" id="lightbox-prev">❮</div>
+            <div class="lightbox-next" id="lightbox-next">❯</div>
+        </div>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const photos = document.querySelectorAll('.photo-item');
+                const lightbox = document.getElementById('lightbox');
+                const lightboxImg = document.getElementById('lightbox-img');
+                const lightboxCaption = document.getElementById('lightbox-caption');
+                const lightboxClose = document.getElementById('lightbox-close');
+                const lightboxPrev = document.getElementById('lightbox-prev');
+                const lightboxNext = document.getElementById('lightbox-next');
+                
+                let currentIndex = 0;
+                const photoData = [];
+                
+                // Collect all photo data
+                photos.forEach(photo => {
+                    const img = photo.querySelector('img');
+                    photoData.push({
+                        src: img.src,
+                        alt: img.alt
+                    });
+                    
+                    photo.addEventListener('click', function() {
+                        currentIndex = parseInt(this.getAttribute('data-index'));
+                        openLightbox(currentIndex);
+                    });
+                });
+                
+                function openLightbox(index) {
+                    lightbox.style.display = 'flex';
+                    document.body.style.overflow = 'hidden';
+                    showPhoto(index);
+                }
+                
+                function closeLightbox() {
+                    lightbox.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+                
+                function showPhoto(index) {
+                    if (index < 0) index = photoData.length - 1;
+                    if (index >= photoData.length) index = 0;
+                    
+                    currentIndex = index;
+                    lightboxImg.src = photoData[index].src;
+                    lightboxCaption.textContent = photoData[index].alt;
+                }
+                
+                function showPrevPhoto() {
+                    showPhoto(currentIndex - 1);
+                }
+                
+                function showNextPhoto() {
+                    showPhoto(currentIndex + 1);
+                }
+                
+                lightboxClose.addEventListener('click', closeLightbox);
+                lightboxPrev.addEventListener('click', showPrevPhoto);
+                lightboxNext.addEventListener('click', showNextPhoto);
+                
+                // Close lightbox on outside click
+                lightbox.addEventListener('click', function(e) {
+                    if (e.target === lightbox) {
+                        closeLightbox();
+                    }
+                });
+                
+                // Keyboard navigation
+                document.addEventListener('keydown', function(e) {
+                    if (lightbox.style.display === 'flex') {
+                        if (e.key === 'Escape') {
+                            closeLightbox();
+                        } else if (e.key === 'ArrowLeft') {
+                            showPrevPhoto();
+                        } else if (e.key === 'ArrowRight') {
+                            showNextPhoto();
+                        }
+                    }
+                });
+            });
+        </script>
+    {% else %}
+        <!-- Gallery View -->
+        <div class="gallery-header">
+            <h1>Photo Gallery</h1>
+            <p>Browse through our collection of albums and memories</p>
+        </div>
+        
+        {% if albums %}
+            <div class="albums-grid">
+                {% for album in albums %}
+                    <div class="album-card">
+                        <a href="{% url 'view_album' album.id %}" style="text-decoration: none; color: inherit; display: block;">
+                            <div class="album-thumbnail">
+                                {% if album.photos.first %}
+                                    <img src="{{ album.photos.first.image.url }}" alt="{{ album.title }}">
+                                {% else %}
+                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #b2bec3;">
+                                        No Photos
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="album-info">
+                                <h2 class="album-title">{{ album.title }}</h2>
+                                <div class="album-meta">
+                                    <span>{{ album.created_at|date:"M d, Y" }}</span>
+                                    <span>{{ album.photos.count }} photos</span>
+                                </div>
+                                {% if album.description %}
+                                    <div class="album-description">{{ album.description }}</div>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif image_list %}
+            <div class="photos-grid">
+                {% for image in image_list %}
+                    <div class="photo-item" data-index="{{ forloop.counter0 }}">
+                        <img src="{% static image %}" alt="Gallery Image {{ forloop.counter }}">
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Lightbox for static images -->
+            <div class="lightbox" id="lightbox">
+                <div class="lightbox-content">
+                    <img src="" alt="" class="lightbox-img" id="lightbox-img">
+                </div>
+                <div class="lightbox-close" id="lightbox-close">×</div>
+                <div class="lightbox-prev" id="lightbox-prev">❮</div>
+                <div class="lightbox-next" id="lightbox-next">❯</div>
+            </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const photos = document.querySelectorAll('.photo-item');
+                    const lightbox = document.getElementById('lightbox');
+                    const lightboxImg = document.getElementById('lightbox-img');
+                    const lightboxClose = document.getElementById('lightbox-close');
+                    const lightboxPrev = document.getElementById('lightbox-prev');
+                    const lightboxNext = document.getElementById('lightbox-next');
+                    
+                    let currentIndex = 0;
+                    const photoData = [];
+                    
+                    // Collect all photo data
+                    photos.forEach(photo => {
+                        const img = photo.querySelector('img');
+                        photoData.push({
+                            src: img.src,
+                            alt: img.alt
+                        });
+                        
+                        photo.addEventListener('click', function() {
+                            currentIndex = parseInt(this.getAttribute('data-index'));
+                            openLightbox(currentIndex);
+                        });
+                    });
+                    
+                    function openLightbox(index) {
+                        lightbox.style.display = 'flex';
+                        document.body.style.overflow = 'hidden';
+                        showPhoto(index);
+                    }
+                    
+                    function closeLightbox() {
+                        lightbox.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                    
+                    function showPhoto(index) {
+                        if (index < 0) index = photoData.length - 1;
+                        if (index >= photoData.length) index = 0;
+                        
+                        currentIndex = index;
+                        lightboxImg.src = photoData[index].src;
+                        lightboxImg.alt = photoData[index].alt;
+                    }
+                    
+                    function showPrevPhoto() {
+                        showPhoto(currentIndex - 1);
+                    }
+                    
+                    function showNextPhoto() {
+                        showPhoto(currentIndex + 1);
+                    }
+                    
+                    lightboxClose.addEventListener('click', closeLightbox);
+                    lightboxPrev.addEventListener('click', showPrevPhoto);
+                    lightboxNext.addEventListener('click', showNextPhoto);
+                    
+                    // Close lightbox on outside click
+                    lightbox.addEventListener('click', function(e) {
+                        if (e.target === lightbox) {
+                            closeLightbox();
+                        }
+                    });
+                    
+                    // Keyboard navigation
+                    document.addEventListener('keydown', function(e) {
+                        if (lightbox.style.display === 'flex') {
+                            if (e.key === 'Escape') {
+                                closeLightbox();
+                            } else if (e.key === 'ArrowLeft') {
+                                showPrevPhoto();
+                            } else if (e.key === 'ArrowRight') {
+                                showNextPhoto();
+                            }
+                        }
+                    });
+                });
+            </script>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🖼️</div>
+                <h2>No Albums Yet</h2>
+                <p>There are no photo albums available yet. Check back soon for updates.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
