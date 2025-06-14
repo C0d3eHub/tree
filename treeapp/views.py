@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import uuid
+from django.contrib.auth.models import User
 
 def build_tree(member):
     children = list(FamilyMember.objects.filter(parent=member))
@@ -368,10 +369,27 @@ from .models import FamilyMember, UserProfile
 import json
 
 @login_required
-def my_family_tree(request):
+def my_family_tree(request, user_id=None):
+    # If user_id is provided and user is superuser, get that user's profile
+    if user_id and request.user.is_superuser:
+        try:
+            target_user = User.objects.get(id=user_id)
+            user_profile = target_user.userprofile
+        except (User.DoesNotExist, UserProfile.DoesNotExist):
+            return render(request, "treeapp/error.html", {
+                'error': "User not found",
+                'message': "The requested user does not exist.",
+                'back_url': 'user_dashboard'
+            })
+    else:
+        # Get the current user's profile
+        try:
+            user_profile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            user_profile = None
+
     # Get the user's family root, last child, and member_id
     try:
-        user_profile = request.user.userprofile
         user_root = user_profile.family_root
         last_child = user_profile.last_child
         member_id = user_profile.member_id
@@ -535,12 +553,20 @@ def my_family_tree(request):
         except:
             member_id_value = None
     
+    # After you set user_profile (for the tree owner)
+    tree_owner_id = None
+    if user_profile and hasattr(user_profile, 'user'):
+        tree_owner_id = user_profile.user.id
+    else:
+        tree_owner_id = request.user.id
+
     return render(request, "treeapp/my_tree.html", {
         "tree_data_json": json.dumps(tree_data) if tree_data else None,
         "family_name": user_root.name if user_root else "",
         "no_tree": False,
         "editable_ancestors": json.dumps(editable_ancestors),
         "member_id": member_id_value,
+        "tree_owner_id": tree_owner_id,
     })
 
 from django.shortcuts import render, redirect

@@ -1,2 +1,8 @@
+asgiref
 Django
+django-cors-headers
+djangorestframework
 pillow
+pip
+sqlparse
+tzdata

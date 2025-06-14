@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
+from django.contrib.auth.models import User
 
 @login_required
 def user_dashboard(request):
@@ -284,25 +285,30 @@ def user_dashboard(request):
     })
 
 @login_required
-def add_post(request):
+def add_post(request, user_id=None):
     """View for creating a new post"""
+    # Determine the target user
+    target_user = request.user
+    if user_id and request.user.is_superuser:
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            target_user = request.user
     if request.method == 'POST':
         title = request.POST.get('title')
         content = request.POST.get('content')
         category = request.POST.get('category')
-        image = request.FILES.get('image')  # Get the uploaded image if any
-        
+        image = request.FILES.get('image')
         if title and content and category:
             post = Post.objects.create(
                 title=title,
                 content=content,
                 category=category,
-                user=request.user,
-                is_approved=False,  # Posts need approval by default
-                image=image  # This will be None if no image is uploaded
+                user=target_user,
+                is_approved=False,
+                image=image
             )
             return redirect('view_post', post_id=post.id)
-    
     return render(request, 'treeapp/posts/create_post.html')
 
 def view_post(request, post_id):
@@ -349,31 +355,33 @@ def edit_post(request, post_id):
     return render(request, 'treeapp/posts/edit_post.html', {'post': post})
 
 @login_required
-def create_album(request):
+def create_album(request, user_id=None):
     """View for creating a new album"""
+    # Determine the target user
+    target_user = request.user
+    if user_id and request.user.is_superuser:
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            target_user = request.user
     if request.method == 'POST':
         title = request.POST.get('title')
         description = request.POST.get('description', '')
         photos = request.FILES.getlist('photos')
-        
         if title:
             album = Album.objects.create(
                 title=title,
                 description=description,
-                user=request.user,
-                is_approved=False  # Albums need approval by default
+                user=target_user,
+                is_approved=False
             )
-            
-            # Process uploaded photos
             for photo in photos:
                 AlbumPhoto.objects.create(
                     album=album,
                     image=photo,
                     caption=''
                 )
-            
             return redirect('view_album', album_id=album.id)
-    
     return render(request, 'treeapp/albums/create_album.html')
 
 def view_album(request, album_id):

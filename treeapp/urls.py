@@ -29,10 +29,12 @@ urlpatterns = [
     
     # Album and Post URLs
     path('add-album/', views_dashboard.create_album, name='add_album'),
+    path('add-album/<int:user_id>/', views_dashboard.create_album, name='add_album_for_user'),
     path('view-album/<int:album_id>/', views_dashboard.view_album, name='view_album'),
     path('edit-album/<int:album_id>/', views_dashboard.edit_album, name='edit_album'),
     
     path('add-post/', views_dashboard.add_post, name='add_post'),
+    path('add-post/<int:user_id>/', views_dashboard.add_post, name='add_post_for_user'),
     path('view-post/<int:post_id>/', views_dashboard.view_post, name='view_post'),
     path('edit-post/<int:post_id>/', views_dashboard.edit_post, name='edit_post'),
     
@@ -65,6 +67,7 @@ urlpatterns = [
     
     # User tree
     path('my-tree/', views.my_family_tree, name='my_family_tree'),
+    path('user-tree/<int:user_id>/', views.my_family_tree, name='user_family_tree'),
     path('edit-member/<int:member_id>/', views.edit_member, name='edit_member'),
     path('upload-tree-image/', views.upload_tree_image, name='upload_tree_image'),
     
