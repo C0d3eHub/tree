@@ -1,0 +1,253 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Donate - Kasauli Mitra Mandal{% endblock %}
+
+{% block extra_head %}
+<style>
+    .donation-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .message-box {
+        background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%); /* Green to lighter green gradient */
+        color: white;
+        padding: 25px 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        text-align: center;
+        animation: fadeIn 1s ease-out;
+    }
+
+    .message-box .message-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .message-box .message-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 10px;
+        opacity: 0.9;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bank-details {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .bank-details h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .bank-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .info-item strong {
+        color: #2c3e50;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .donation-form {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    .form-control:focus {
+        border-color: #4CAF50;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+    }
+
+    .submit-btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: background-color 0.3s;
+    }
+
+    .submit-btn:hover {
+        background-color: #45a049;
+    }
+
+    .thank-you-message {
+        display: none;
+        text-align: center;
+        padding: 20px;
+        background: #e8f5e9;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .thank-you-message h3 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .thank-you-message p {
+        color: #666;
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+        .donation-container {
+            padding: 15px;
+            margin: 20px auto;
+        }
+
+        .bank-info {
+            grid-template-columns: 1fr;
+        }
+
+        .donation-form {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="donation-container">
+    <h1 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">Support Kasauli Mitra Mandal</h1>
+    
+    <div class="message-box">
+        <h2 class="message-title">Help Us Grow Our Community!</h2>
+        <p class="message-text">Your generous contributions enable us to maintain and expand the Kasauli Mitra Mandal family tree, organize events, and preserve our heritage for future generations. Every donation, big or small, makes a significant difference!</p>
+        <p class="message-text">Thank you for being a part of our journey and for helping us keep the family spirit alive. Together, we can achieve so much more!</p>
+    </div>
+
+    <div class="bank-details">
+        <h3>Bank Account Details</h3>
+        <div class="bank-info">
+            <div class="info-item">
+                <strong>Account Name</strong>
+                <span>Kasauli Mitra Mandal</span>
+            </div>
+            <div class="info-item">
+                <strong>Account Number</strong>
+                <span>001100</span>
+            </div>
+            <div class="info-item">
+                <strong>IFSC Code</strong>
+                <span>PUNB0022310</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="donation-form">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">Record Your Donation</h3>
+        <form id="donationForm" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="name">Your Name</label>
+                <input type="text" id="name" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="amount">Donation Amount (₹)</label>
+                <input type="number" id="amount" name="amount" class="form-control" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="transaction_id">Transaction ID</label>
+                <input type="text" id="transaction_id" name="transaction_id" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="donation_date">Donation Date</label>
+                <input type="date" id="donation_date" name="donation_date" class="form-control" required>
+            </div>
+            <button type="submit" class="submit-btn">Submit Donation</button>
+        </form>
+        <div id="thankYouMessage" class="thank-you-message">
+            <h3>Thank You!</h3>
+            <p>Your donation has been recorded successfully.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('donationForm');
+    const thankYouMessage = document.getElementById('thankYouMessage');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(form);
+        
+        // Send POST request
+        fetch('{% url "record_donation" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show thank you message
+                form.style.display = 'none';
+                thankYouMessage.style.display = 'block';
+                thankYouMessage.querySelector('p').textContent = `Thank you ${data.name} for your generous donation!`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error submitting your donation. Please try again.');
+        });
+    });
+});
+</script>
+{% endblock %} 

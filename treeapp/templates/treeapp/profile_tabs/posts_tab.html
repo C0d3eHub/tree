@@ -1,0 +1,272 @@
+{% load static %}
+
+<div class="posts-container">
+    <div class="posts-header">
+        <h2>My Posts</h2>
+        <a href="{% url 'add_post' %}" class="action-button">
+            <span class="action-icon">✏️</span>
+            <span>Create New Post</span>
+        </a>
+    </div>
+    
+    {% if user_posts %}
+        <div class="posts-grid">
+            {% for post in user_posts %}
+                <div class="post-card">
+                    <div class="post-card-header">
+                        <h3 class="post-title">{{ post.title }}</h3>
+                        <span class="post-category">{{ post.get_category_display }}</span>
+                    </div>
+                    
+                    <div class="post-content">
+                        <p>{{ post.content|truncatechars:150 }}</p>
+                    </div>
+                    
+                    <div class="post-footer">
+                        <div class="post-meta">
+                            <span class="post-date">{{ post.created_at|date:"M d, Y" }}</span>
+                            {% if not post.is_approved %}
+                                <span class="approval-badge pending">Pending Approval</span>
+                            {% else %}
+                                <span class="approval-badge approved">Approved</span>
+                            {% endif %}
+                        </div>
+                        <div class="post-actions">
+                            <a href="{% url 'view_post' post.id %}" class="post-action-btn view">View</a>
+                            <a href="{% url 'edit_post' post.id %}" class="post-action-btn edit">Edit</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3>No Posts Yet</h3>
+            <p>You haven't created any posts yet. Share news, events, or family history with the community.</p>
+            <a href="{% url 'add_post' %}" class="empty-state-action">Create Your First Post</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .posts-container {
+        position: relative;
+    }
+    
+    .posts-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .posts-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 1.5rem;
+    }
+    
+    .action-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #9c27b0, #ba68c8);
+        color: white;
+        padding: 10px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(156, 39, 176, 0.2);
+    }
+    
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(156, 39, 176, 0.3);
+    }
+    
+    .action-icon {
+        font-size: 1.2rem;
+    }
+    
+    .posts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .post-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .post-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .post-card-header {
+        padding: 15px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .post-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .post-category {
+        background: #e0e0e0;
+        color: #555;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .post-content {
+        padding: 15px;
+        flex-grow: 1;
+    }
+    
+    .post-content p {
+        margin: 0;
+        color: #555;
+        line-height: 1.5;
+    }
+    
+    .post-footer {
+        padding: 15px;
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .post-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .post-date {
+        color: #777;
+        font-size: 0.9rem;
+    }
+    
+    .approval-badge {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .approval-badge.pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .approval-badge.approved {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .post-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .post-action-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 0;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .post-action-btn.view {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    
+    .post-action-btn.edit {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+    
+    .post-action-btn:hover {
+        opacity: 0.9;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        color: #9c27b0;
+    }
+    
+    .empty-state h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+    
+    .empty-state p {
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto 20px;
+    }
+    
+    .empty-state-action {
+        display: inline-block;
+        background: linear-gradient(135deg, #9c27b0, #ba68c8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .empty-state-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+    }
+    
+    @media (max-width: 768px) {
+        .posts-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .posts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

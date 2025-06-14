@@ -1,0 +1,371 @@
+{% extends "treeapp/base.html" %}
+{% block title %}Edit Family Member{% endblock %}
+{% load static %}
+{% block content %}
+<script>
+  // Force mobile rendering
+  document.addEventListener('DOMContentLoaded', function() {
+    // Force redraw to ensure proper rendering on mobile
+    document.body.style.display = 'none';
+    setTimeout(function() {
+      document.body.style.display = '';
+    }, 10);
+  });
+</script>
+<!-- Add flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+
+<!-- Force mobile rendering -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Force redraw to ensure proper rendering on mobile
+    document.body.style.display = 'none';
+    setTimeout(function() {
+      document.body.style.display = '';
+    }, 10);
+  });
+</script>
+<div class="edit-member-container">
+  <div class="edit-member-card">
+    <div class="card-header">
+      <div class="header-icon">✏️</div>
+      <h2>Edit Family Member</h2>
+    </div>
+    
+    {% if member.photo %}
+    <div class="member-photo">
+      <img src="{{ member.photo.url }}" alt="{{ member.name }}">
+    </div>
+    {% endif %}
+    
+    {% if message %}
+    <div class="user-message">
+      <div class="info-message">{{ message }}</div>
+    </div>
+    {% endif %}
+    
+    {% if is_superuser %}
+    <div class="admin-message">
+      <div class="admin-info-message">Admin mode: You have full editing permissions for all family members.</div>
+    </div>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data" class="edit-form">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="input-group">
+        <label for="id_name">Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+          <div class="alert-error">{{ form.name.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="section-label">Birth Information</div>
+      <div class="input-row birth-row">
+        <div class="input-group">
+          <label for="id_date_of_birth">Date of Birth</label>
+          {{ form.date_of_birth }}
+          <small>If full date not available, enter year below.</small>
+          {% if form.date_of_birth.errors %}
+            <div class="alert-error">{{ form.date_of_birth.errors|striptags }}</div>
+          {% endif %}
+        </div>
+        <div class="input-group">
+          <label for="id_year_of_birth">Year of Birth (if date not available)</label>
+          {{ form.year_of_birth }}
+          {% if form.year_of_birth.errors %}
+            <div class="alert-error">{{ form.year_of_birth.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="input-group">
+        <label for="id_year_of_death">Year of Death (if)</label>
+        {{ form.year_of_death }}
+        {% if form.year_of_death.errors %}
+          <div class="alert-error">{{ form.year_of_death.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="input-group photo-upload">
+        <label for="id_photo">
+          <span>Photo</span>
+          <small>Upload a new photo (optional)</small>
+        </label>
+        {{ form.photo }}
+        {% if form.photo.errors %}
+          <div class="alert-error">{{ form.photo.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      <div class="button-group">
+        <button type="submit" class="btn-primary">
+          <span class="btn-icon">💾</span> Save Changes
+        </button>
+        <a href="{% url 'user_dashboard' %}" class="btn-secondary">
+          <span class="btn-icon">↩️</span> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.edit-member-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 8px;
+  min-height: 80vh;
+  background: #f5f7fa;
+}
+.edit-member-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(44,62,80,0.10);
+  padding: 36px 32px 28px 32px;
+  width: 100%;
+  max-width: 480px;
+  transition: transform 0.3s;
+  position: relative;
+}
+.edit-member-card:hover {
+  transform: translateY(-4px) scale(1.01);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28px;
+  background: linear-gradient(135deg, #4CAF50, #2196F3);
+  margin: -36px -32px 28px -32px;
+  padding: 22px 32px;
+  border-radius: 18px 18px 0 0;
+  color: white;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+}
+.header-icon {
+  font-size: 30px;
+  margin-right: 18px;
+  background: white;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.10);
+}
+.card-header h2 {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.section-label {
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  letter-spacing: 0.2px;
+}
+.member-photo {
+  text-align: center;
+  margin-bottom: 25px;
+}
+.member-photo img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid #4CAF50;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.10);
+}
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.input-row {
+  display: flex;
+  gap: 18px;
+}
+.birth-row .input-group {
+  flex: 1;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+.input-group label {
+  font-weight: 600;
+  margin-bottom: 7px;
+  color: #333;
+  font-size: 1rem;
+}
+.input-group label small {
+  font-weight: normal;
+  color: #666;
+  font-size: 0.85em;
+  margin-top: 3px;
+}
+.input-group input[type="text"],
+.input-group input[type="number"],
+.input-group input[type="date"],
+.input-group input[type="file"] {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 2px;
+}
+.input-group input[type="text"]:focus,
+.input-group input[type="number"]:focus,
+.input-group input[type="date"]:focus {
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px rgba(33,150,243,0.08);
+  outline: none;
+}
+.input-group small {
+  color: #888;
+  margin-top: 2px;
+  font-size: 0.93em;
+}
+.alert-error {
+  color: #d32f2f;
+  font-size: 0.93em;
+  margin-top: 3px;
+}
+.info-message {
+  background: #e3f2fd;
+  color: #0d47a1;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin: 15px auto;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.07);
+  font-weight: 500;
+}
+.admin-info-message {
+  background: #fbe9e7;
+  color: #c62828;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin: 15px auto;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.07);
+  font-weight: 500;
+}
+.button-group {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+}
+.btn-primary, .btn-secondary {
+  padding: 12px 0;
+  border-radius: 8px;
+  font-size: 1.08rem;
+  font-weight: 600;
+  width: 50%;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(90deg, #43a047 60%, #1e88e5 100%);
+  color: white;
+  border: none;
+}
+.btn-primary:hover {
+  background: linear-gradient(90deg, #388e3c 60%, #1565c0 100%);
+}
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1.5px solid #e0e0e0;
+}
+.btn-secondary:hover {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.btn-icon {
+  font-size: 1.2rem;
+  margin-right: 5px;
+}
+@media (max-width: 600px) {
+  .edit-member-container {
+    padding: 10px;
+    min-height: 60vh;
+  }
+  .edit-member-card {
+    padding: 18px 6px 16px 6px;
+    border-radius: 12px;
+    width: 98%;
+    max-width: 100%;
+  }
+  .card-header {
+    margin: -18px -6px 18px -6px;
+    padding: 13px 10px;
+    border-radius: 12px 12px 0 0;
+  }
+  .header-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+    margin-right: 10px;
+  }
+  .card-header h2 {
+    font-size: 18px;
+  }
+  .member-photo img {
+    width: 90px;
+    height: 90px;
+  }
+  .input-row, .birth-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .button-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn-primary, .btn-secondary {
+    width: 100%;
+  }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  flatpickr("#id_date_of_birth", {
+    dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "d/m/Y",
+    allowInput: true,
+    yearSelectorType: 'dropdown',
+    maxDate: "today",
+    defaultDate: null,
+    wrap: false,
+    plugins: [
+      new flatpickr.plugins.monthSelect({
+        shorthand: true,
+        dateFormat: "Y-m-d",
+        altFormat: "F Y"
+      })
+    ],
+    onReady: function(selectedDates, dateStr, instance) {
+      if (instance.currentYearElement) {
+        instance.currentYearElement.setAttribute('style', 'max-height:200px;overflow:auto;');
+      }
+    }
+  });
+</script>
+{% endblock %}

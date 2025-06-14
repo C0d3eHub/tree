@@ -1,0 +1,209 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Edit Post{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'treeapp/css/dashboard.css' %}">
+<style>
+    .post-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .form-header {
+        margin-bottom: 25px;
+        text-align: center;
+    }
+    
+    .form-header h1 {
+        color: var(--primary-color);
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .form-header p {
+        color: var(--text-medium);
+    }
+    
+    .post-form {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        padding: 30px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
+    }
+    
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23636e72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        padding-right: 40px;
+    }
+    
+    textarea.form-control {
+        min-height: 200px;
+        resize: vertical;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+    
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #3a5ae8;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .btn-secondary {
+        background: white;
+        color: var(--text-medium);
+        border: 1px solid var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+        background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .btn-danger {
+        background: var(--danger-color);
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c0392b;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .form-help {
+        margin-top: 5px;
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+    
+    /* Error messages */
+    .errorlist {
+        color: var(--danger-color);
+        list-style-type: none;
+        padding: 0;
+        margin: 5px 0 0 0;
+        font-size: 0.9rem;
+    }
+    
+    @media (max-width: 768px) {
+        .post-form {
+            padding: 20px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="post-form-container">
+    <div class="form-header">
+        <h1>Edit Post</h1>
+        <p>Update your post content</p>
+    </div>
+    
+    <form method="post" class="post-form" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_title">Title</label>
+            {{ form.title.errors }}
+            <input type="text" name="title" id="id_title" class="form-control" required maxlength="200" value="{{ post.title }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="id_category">Category</label>
+            {{ form.category.errors }}
+            <select name="category" id="id_category" class="form-control" required>
+                <option value="news" {% if post.category == 'news' %}selected{% endif %}>News</option>
+                <option value="event" {% if post.category == 'event' %}selected{% endif %}>Event</option>
+                <option value="history" {% if post.category == 'history' %}selected{% endif %}>History</option>
+                <option value="other" {% if post.category == 'other' %}selected{% endif %}>Other</option>
+            </select>
+            <div class="form-help">Choose the most appropriate category for your post</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_content">Content</label>
+            {{ form.content.errors }}
+            <textarea name="content" id="id_content" class="form-control" required>{{ post.content }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="id_image">Image (optional)</label>
+            {{ form.image.errors }}
+            <input type="file" name="image" id="id_image" class="form-control-file" accept="image/*">
+            {% if post.image %}
+            <div style="margin-top:10px;">
+                <img src="{{ post.image.url }}" alt="Current Image" style="max-width:200px;max-height:200px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'posts' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Update Post</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

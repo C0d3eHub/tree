@@ -1,0 +1,1257 @@
+{% extends 'treeapp/base.html' %}
+
+{% block title %}Blood Bank{% endblock %}
+
+{% block content %}
+<div class="blood-bank-container">
+    <div class="blood-bank-header">
+        <h1>Blood Bank</h1>
+        <p>Connect blood donors with those in need</p>
+    </div>
+    
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="action-buttons">
+        <a href="{% url 'blood_donor' %}" class="btn-action donor">
+            <span class="btn-icon">❤️</span> Become a Donor
+        </a>
+        <a href="{% url 'blood_request' %}" class="btn-action need">
+            <span class="btn-icon">🩸</span> Request Blood
+        </a>
+        <button class="btn-action guide" onclick="openQuickGuide()">
+            <span class="btn-icon">📖</span> Quick Guide
+        </button>
+    </div>
+    
+    <!-- Quick Guide Modal -->
+    <div id="quickGuideModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Quick Guide</h2>
+                <span class="close" onclick="closeQuickGuide()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="guide-section">
+                    <h3><span class="guide-icon">❤️</span> Becoming a Donor</h3>
+                    <ul>
+                        <li>Click "Become a Donor" to register</li>
+                        <li>Fill in your details and blood group</li>
+                        <li>Your information will be visible to those in need</li>
+                    </ul>
+                </div>
+                <div class="guide-section">
+                    <h3><span class="guide-icon">🩸</span> Requesting Blood</h3>
+                    <ul>
+                        <li>Click "Request Blood" to create a request</li>
+                        <li>Specify blood group and urgency level</li>
+                        <li>Provide hospital and contact details</li>
+                    </ul>
+                </div>
+                <div class="guide-section">
+                    <h3><span class="guide-icon">🔍</span> Finding Donors</h3>
+                    <ul>
+                        <li>View all available donors in the list below</li>
+                        <li>Check blood type compatibility</li>
+                        <li>Contact donors directly using provided details</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Blood Statistics Section -->
+    <div class="blood-stats">
+        <h2>Blood Group Statistics</h2>
+        <div class="stats-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Blood Group</th>
+                        <th>Donors</th>
+                        <th>Requests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group, stats in blood_stats.items %}
+                    <tr>
+                        <td><span class="blood-badge">{{ group }}</span></td>
+                        <td>{{ stats.donors }}</td>
+                        <td>{{ stats.needs }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td>Total</td>
+                        <td>{{ total_donors }}</td>
+                        <td>{{ total_needs }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Combined Donors Section -->
+    <div class="blood-card donors">
+        <div class="card-header">
+            <div class="header-icon">❤️</div>
+            <h2>All Blood Donors</h2>
+        </div>
+        <div class="card-body">
+            {% if donations or registered_donors %}
+            <div class="blood-table">
+                <table>
+                    <thead>
+                        <tr>
+                          <th>S.N.</th>
+                          <th>Name</th>
+                          <th>Blood Group</th>
+                          <th>Phone</th>
+                          <th>Type</th>
+                          {% if user.is_superuser %}
+                            <th>Action</th>
+                          {% endif %}
+                        </tr>
+                      </thead>
+                    <tbody>
+                        {% for donor in registered_donors %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ donor.name }}</td>
+                            <td><span class="blood-badge">{{ donor.blood_group }}</span></td>
+                            <td>{{ donor.phone|default:"Not provided" }}</td>
+                            <td>
+                                <span class="type-badge registered">
+                                    {% if user.is_authenticated %}
+                                        <a href="{% url 'user_dashboard' %}?user_id={{ donor.user.id }}" style="color:inherit;text-decoration:underline;">📝 Registered User</a>
+                                    {% else %}
+                                        📝 Registered User
+                                    {% endif %}
+                                </span>
+                            </td>
+                            {% if user.is_superuser %}
+                            <td>
+                                <form method="post" action="{% url 'toggle_hide_donor' donor.user.id %}" style="display:inline;">{% csrf_token %}
+                                    {% if donor.hide_from_donor_list %}
+                                        <button type="submit" class="btn btn-sm" title="Unhide from donor list">Unhide</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-sm" title="Hide from donor list">Hide</button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                        
+                        {% for donation in donations %}
+                        <tr>
+                            <td>{{ registered_donors|length|add:forloop.counter }}</td>
+                            <td>{{ donation.name }}</td>
+                            <td><span class="blood-badge">{{ donation.blood_group }}</span></td>
+                            <td>{{ donation.phone }}</td>
+                            <td>
+                                {% if donation.is_registered_user %}
+                                <span class="type-badge registered">Registered User</span>
+                                {% else %}
+                                <span class="type-badge volunteer">Volunteer</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <p>No blood donors available at the moment.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Blood Need Section -->
+    <div class="blood-card needs">
+        <div class="card-header">
+            <div class="header-icon">🩸</div>
+            <h2>Blood Needed</h2>
+        </div>
+        <div class="card-body">
+            {% if needs %}
+            <div class="blood-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Name</th>
+                            <th>Blood Group</th>
+                            <th>Urgency</th>
+                            <th>Needed At</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for need in needs %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ need.name }}</td>
+                            <td><span class="blood-badge">{{ need.blood_group }}</span></td>
+                            <td>
+                                {% if need.urgency == 'critical' %}
+                                <span class="urgency-badge critical">Critical</span>
+                                {% elif need.urgency == 'high' %}
+                                <span class="urgency-badge high">High</span>
+                                {% elif need.urgency == 'medium' %}
+                                <span class="urgency-badge medium">Medium</span>
+                                {% elif need.urgency == 'low' %}
+                                <span class="urgency-badge low">Low</span>
+                                {% else %}
+                                <span class="urgency-badge">Not specified</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ need.needed_where|default:"Not specified" }}</td>
+                            <td>{{ need.phone }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <p>No blood requests at the moment.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="blood-info">
+        <div class="info-card facts-card">
+            <h3><span class="info-icon">💡</span> Blood Donation Facts</h3>
+            <ul class="facts-list">
+                <li><span class="fact-emoji">🩸</span> One donation can save up to <span class="fact-highlight">three lives</span></li>
+                <li><span class="fact-emoji">🏭</span> Blood cannot be manufactured; it can only come from <span class="fact-highlight">donors</span></li>
+                <li><span class="fact-emoji">⏳</span> Most donated red blood cells must be used within <span class="fact-highlight">42 days</span></li>
+                <li><span class="fact-emoji">🧑‍🤝‍🧑</span> The average adult has about <span class="fact-highlight">10 pints</span> of blood in their body</li>
+            </ul>
+        </div>
+        <div class="info-card compatibility-card">
+            <h3><span class="info-icon">🔗</span> Blood Type Compatibility</h3>
+            <div class="compatibility-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Blood Type</th>
+                            <th>Can Donate To</th>
+                            <th>Can Receive From</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="blood-badge badge-a">A+</span></td>
+                            <td><span class="compat-badge">A+, AB+</span></td>
+                            <td><span class="compat-badge">A+, A-, O+, O-</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="blood-badge badge-a">A-</span></td>
+                            <td><span class="compat-badge">A+, A-, AB+, AB-</span></td>
+                            <td><span class="compat-badge">A-, O-</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="blood-badge badge-b">B+</span></td>
+                            <td><span class="compat-badge">B+, AB+</span></td>
+                            <td><span class="compat-badge">B+, B-, O+, O-</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="blood-badge badge-b">B-</span></td>
+                            <td><span class="compat-badge">B+, B-, AB+, AB-</span></td>
+                            <td><span class="compat-badge">B-, O-</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="blood-badge badge-ab">AB+</span></td>
+                            <td><span class="compat-badge">AB+</span></td>
+                            <td><span class="compat-badge">All Types</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="blood-badge badge-ab">AB-</span></td>
+                            <td><span class="compat-badge">AB+, AB-</span></td>
+                            <td><span class="compat-badge">A-, B-, AB-, O-</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="blood-badge badge-o">O+</span></td>
+                            <td><span class="compat-badge">A+, B+, AB+, O+</span></td>
+                            <td><span class="compat-badge">O+, O-</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="blood-badge badge-o">O-</span></td>
+                            <td><span class="compat-badge">All Types</span></td>
+                            <td><span class="compat-badge">O-</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    background: #f8f9fa;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+.blood-bank-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.blood-bank-header {
+    text-align: center;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, #1a237e, #0d47a1);
+    padding: 30px 20px;
+    border-radius: 20px;
+    color: white;
+    box-shadow: 0 15px 30px rgba(13, 71, 161, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.blood-bank-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%);
+    background-size: 60px 60px;
+    opacity: 0.1;
+}
+
+.blood-bank-header h1 {
+    font-size: 2.8rem;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-weight: 700;
+}
+
+.blood-bank-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.messages-container {
+    margin-bottom: 30px;
+}
+
+.alert {
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #43a047, #2e7d32);
+    color: white;
+}
+
+.alert-error {
+    background: linear-gradient(135deg, #e53935, #c62828);
+    color: white;
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 200px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%);
+    background-size: 20px 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.btn-action:hover::before {
+    opacity: 1;
+}
+
+.btn-action.donor {
+    background: linear-gradient(45deg, #2e7d32, #43a047);
+    color: white;
+}
+
+.btn-action.need {
+    background: linear-gradient(45deg, #4527a0, #5e35b1);
+    color: white;
+}
+
+.btn-action.guide {
+    background: linear-gradient(45deg, #e65100, #f57c00);
+    color: white;
+}
+
+.btn-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+}
+
+.btn-icon {
+    font-size: 1.3rem;
+    margin-right: 12px;
+}
+
+.blood-stats {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.blood-stats h2 {
+    color: #1a237e;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.stats-table {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.stats-table table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.stats-table th, .stats-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+.stats-table th {
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(45deg, #1a237e, #3949ab);
+    font-size: 1.1rem;
+}
+
+.stats-table td {
+    font-size: 1.05rem;
+    color: #424242;
+    transition: all 0.3s ease;
+}
+
+.stats-table tr:hover td {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.stats-table tr:hover td:first-child {
+    transform: scale(1.02);
+}
+
+.total-row {
+    background: linear-gradient(135deg, #f5f5f5, #e0e0e0) !important;
+    font-weight: bold;
+}
+
+.total-row td {
+    color: #1a237e;
+    font-size: 1.1rem;
+}
+
+.blood-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 30px;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.blood-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    color: white;
+}
+
+.donors .card-header {
+    background: linear-gradient(45deg, #2e7d32, #43a047);
+}
+
+.needs .card-header {
+    background: linear-gradient(45deg, #4527a0, #5e35b1);
+}
+
+.header-icon {
+    font-size: 1.8rem;
+    margin-right: 15px;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.blood-table {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.blood-table table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.blood-table th, .blood-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.blood-table th {
+    font-weight: 600;
+    color: #1a237e;
+    background: #f5f5f5;
+    font-size: 1.1rem;
+}
+
+.blood-table td {
+    font-size: 1.05rem;
+    color: #424242;
+}
+
+.blood-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    color: white;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    min-width: 80px;
+    text-align: center;
+}
+
+.blood-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.urgency-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.urgency-badge.critical {
+    background: linear-gradient(45deg, #c62828, #d32f2f);
+    color: white;
+}
+
+.urgency-badge.high {
+    background: linear-gradient(45deg, #e65100, #f57c00);
+    color: white;
+}
+
+.urgency-badge.medium {
+    background: linear-gradient(45deg, #fbc02d, #fdd835);
+    color: #333;
+}
+
+.urgency-badge.low {
+    background: linear-gradient(45deg, #558b2f, #7cb342);
+    color: white;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.type-badge.registered {
+    background: linear-gradient(45deg, #1565c0, #1976d2);
+    color: white;
+}
+
+.type-badge.volunteer {
+    background: linear-gradient(45deg, #2e7d32, #43a047);
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 0;
+    color: #757575;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.blood-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.info-card h3 {
+    color: #1a237e;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.info-icon {
+    font-size: 1.8rem;
+    margin-right: 12px;
+}
+
+.facts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.facts-list li {
+    background: linear-gradient(135deg, #fff8e1, #ffe0b2);
+    margin-bottom: 15px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.1);
+    border-left: 5px solid #ffa000;
+    color: #5d4037;
+    transition: all 0.3s ease;
+}
+
+.facts-list li:hover {
+    transform: translateX(5px);
+    background: linear-gradient(135deg, #ffe082, #ffcc80);
+}
+
+.fact-emoji {
+    font-size: 1.5rem;
+    margin-right: 15px;
+}
+
+.fact-highlight {
+    color: #c62828;
+    font-weight: 700;
+}
+
+.compatibility-table {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.compatibility-table table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.compatibility-table th, .compatibility-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.compatibility-table th {
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(45deg, #1a237e, #3949ab);
+    font-size: 1.1rem;
+}
+
+.compatibility-table td {
+    font-size: 1.05rem;
+    color: #424242;
+}
+
+.compatibility-table tr:nth-child(even) td {
+    background: #f5f5f5;
+}
+
+.compatibility-table tr:nth-child(odd) td {
+    background: white;
+}
+
+.blood-badge.badge-a {
+    background: linear-gradient(45deg, #1565c0, #1976d2);
+}
+
+.blood-badge.badge-b {
+    background: linear-gradient(45deg, #c62828, #d32f2f);
+}
+
+.blood-badge.badge-ab {
+    background: linear-gradient(45deg, #4527a0, #5e35b1);
+}
+
+.blood-badge.badge-o {
+    background: linear-gradient(45deg, #2e7d32, #43a047);
+}
+
+.compat-badge {
+    display: inline-block;
+    background: #fff8e1;
+    color: #e65100;
+    border-radius: 50px;
+    padding: 4px 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin: 2px;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 0;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #e65100, #f57c00);
+    color: white;
+    padding: 25px 30px;
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.close {
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    opacity: 0.8;
+}
+
+.close:hover {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.guide-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #fff8e1;
+    border-radius: 12px;
+    border-left: 5px solid #ff9800;
+    transition: transform 0.3s ease;
+}
+
+.guide-section:hover {
+    transform: translateX(5px);
+}
+
+.guide-section h3 {
+    color: #e65100;
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.guide-icon {
+    margin-right: 12px;
+    font-size: 1.4rem;
+}
+
+.guide-section ul {
+    margin: 0;
+    padding-left: 25px;
+}
+
+.guide-section li {
+    margin: 10px 0;
+    color: #5d4037;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .blood-bank-container {
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 992px) {
+    .blood-bank-header h1 {
+        font-size: 2.8rem;
+    }
+    
+    .blood-bank-header p {
+        font-size: 1.2rem;
+    }
+    
+    .action-buttons {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .blood-bank-container {
+        padding: 15px;
+    }
+    
+    .blood-bank-header {
+        padding: 25px 15px;
+    }
+    
+    .blood-bank-header h1 {
+        font-size: 2rem;
+    }
+    
+    .blood-bank-header p {
+        font-size: 1.1rem;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 0;
+    }
+    
+    .btn-action {
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
+    
+    .blood-stats, .blood-card {
+        padding: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .card-header {
+        padding: 12px 15px;
+    }
+    
+    .card-header h2 {
+        font-size: 1.4rem;
+    }
+    
+    .blood-table th, .blood-table td {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+    }
+    
+    .info-card {
+        padding: 20px;
+    }
+    
+    .info-card h3 {
+        font-size: 1.3rem;
+    }
+    
+    .facts-list li {
+        font-size: 1rem;
+        padding: 12px 15px;
+    }
+    
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+    
+    .modal-header {
+        padding: 20px;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .guide-section {
+        padding: 15px;
+    }
+    
+    .guide-section h3 {
+        font-size: 1.2rem;
+    }
+    
+    .guide-section li {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .blood-bank-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .blood-bank-header p {
+        font-size: 1rem;
+    }
+    
+    .btn-action {
+        padding: 12px 18px;
+        font-size: 0.95rem;
+    }
+    
+    .blood-stats h2, .card-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .blood-table th, .blood-table td {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .blood-badge, .urgency-badge, .type-badge, .compat-badge {
+        font-size: 0.85rem;
+        padding: 4px 10px;
+    }
+}
+
+/* Blood Group Table Styling */
+.stats-table tr:nth-child(odd) td:first-child,
+.blood-table tr:nth-child(odd) td:nth-child(3) {
+    background: none;
+    width: 100px;
+    text-align: center;
+}
+
+.stats-table tr:nth-child(even) td:first-child,
+.blood-table tr:nth-child(even) td:nth-child(3) {
+    background: none;
+    width: 100px;
+    text-align: center;
+}
+
+/* A+ and A- */
+.stats-table tr:nth-child(1) td:first-child .blood-badge,
+.stats-table tr:nth-child(2) td:first-child .blood-badge,
+.blood-table tr td:nth-child(3) .blood-badge.badge-a {
+    background: linear-gradient(45deg, #1565c0, #1976d2);
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* B+ and B- */
+.stats-table tr:nth-child(3) td:first-child .blood-badge,
+.stats-table tr:nth-child(4) td:first-child .blood-badge,
+.blood-table tr td:nth-child(3) .blood-badge.badge-b {
+    background: linear-gradient(45deg, #c62828, #d32f2f);
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* AB+ and AB- */
+.stats-table tr:nth-child(5) td:first-child .blood-badge,
+.stats-table tr:nth-child(6) td:first-child .blood-badge,
+.blood-table tr td:nth-child(3) .blood-badge.badge-ab {
+    background: linear-gradient(45deg, #4527a0, #5e35b1);
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* O+ and O- */
+.stats-table tr:nth-child(7) td:first-child .blood-badge,
+.stats-table tr:nth-child(8) td:first-child .blood-badge,
+.blood-table tr td:nth-child(3) .blood-badge.badge-o {
+    background: linear-gradient(45deg, #2e7d32, #43a047);
+    color: white;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.stats-table td {
+    font-size: 1.05rem;
+    color: #1a237e;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.stats-table tr:hover td {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.stats-table tr:hover td:first-child {
+    transform: scale(1.02);
+}
+
+.blood-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    color: white;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    min-width: 80px;
+    text-align: center;
+}
+
+.blood-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Table Header Styling */
+.stats-table th {
+    background: linear-gradient(45deg, #1a237e, #3949ab);
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-table th:first-child {
+    width: 100px;
+}
+
+.stats-table {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.stats-table table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.stats-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Total Row Styling */
+.total-row {
+    background: linear-gradient(135deg, #f5f5f5, #e0e0e0) !important;
+    font-weight: bold;
+}
+
+.total-row td {
+    color: #1a237e;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* Blood Table Specific Styling */
+.blood-table td:nth-child(3) {
+    width: 100px;
+    text-align: center;
+}
+
+.blood-table td {
+    color: #1a237e;
+    font-weight: 500;
+}
+
+.blood-table td:nth-child(3) .blood-badge {
+    color: #d32f2f;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* A+ and A- */
+.blood-table tr td:nth-child(3) .blood-badge.badge-a {
+    background: linear-gradient(45deg, #1565c0, #1976d2);
+    color: #d32f2f;
+}
+
+/* B+ and B- */
+.blood-table tr td:nth-child(3) .blood-badge.badge-b {
+    background: linear-gradient(45deg, #c62828, #d32f2f);
+    color: #d32f2f;
+}
+
+/* AB+ and AB- */
+.blood-table tr td:nth-child(3) .blood-badge.badge-ab {
+    background: linear-gradient(45deg, #4527a0, #5e35b1);
+    color: #d32f2f;
+}
+
+/* O+ and O- */
+.blood-table tr td:nth-child(3) .blood-badge.badge-o {
+    background: linear-gradient(45deg, #2e7d32, #43a047);
+    color: #d32f2f;
+}
+
+@media (max-width: 768px) {
+    .blood-badge {
+        padding: 4px 10px;
+        font-size: 0.9rem;
+        min-width: 70px;
+    }
+    
+    .stats-table th:first-child,
+    .blood-table td:nth-child(3) {
+        width: 80px;
+    }
+}
+</style>
+
+<script>
+function openQuickGuide() {
+    document.getElementById('quickGuideModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeQuickGuide() {
+    document.getElementById('quickGuideModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    var modal = document.getElementById('quickGuideModal');
+    if (event.target == modal) {
+        closeQuickGuide();
+    }
+}
+</script>
+{% endblock %}

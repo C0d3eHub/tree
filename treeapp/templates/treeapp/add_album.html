@@ -1,0 +1,249 @@
+{% extends 'treeapp/base.html' %}
+{% block title %}Add New Album{% endblock %}
+
+{% block content %}
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.form-title {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #4a6bff;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    border-color: #4a6bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.2);
+}
+
+.form-text {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+.btn-submit {
+    background: linear-gradient(90deg, #4a6bff, #6c5ce7);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(90deg, #3a5bef, #5c4cd7);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 107, 255, 0.3);
+}
+
+.photo-upload-container {
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.photo-upload-title {
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    color: #4a6bff;
+}
+
+.photo-upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.photo-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.photo-item {
+    width: 150px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.photo-caption {
+    padding: 8px;
+    font-size: 0.85rem;
+    background: #f5f5f5;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.success-message {
+    background-color: #e3fcef;
+    color: #00b894;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.error-message {
+    background-color: #fdedec;
+    color: #e74c3c;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.photo-upload-container {
+    display: none;
+}
+
+.album-created .photo-upload-container {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .form-container {
+        padding: 15px;
+    }
+}
+</style>
+
+<div class="form-container {% if album %}album-created{% endif %}">
+    <h1 class="form-title">
+        <span style="font-size: 2rem;">📸</span><br>
+        Create New Album
+    </h1>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="{% if message.tags == 'success' %}success-message{% else %}error-message{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% if not album %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.title.id_for_label }}">Album Title</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="error-message">{{ form.title.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                <div class="form-text">Provide a brief description of this album.</div>
+                {% if form.description.errors %}
+                    <div class="error-message">{{ form.description.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="submit" class="btn-submit">Create Album</button>
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn-cancel" style="width: 100%;" onclick="window.location.href='{% url 'user_dashboard' %}'">Cancel</button>
+            </div>
+        </form>
+    {% else %}
+        <div class="success-message">
+            Album "{{ album.title }}" created successfully! Now you can add photos to your album.
+        </div>
+        
+        <div class="photo-upload-container">
+            <h2 class="photo-upload-title">Add Photos to Your Album</h2>
+            
+            <form method="post" enctype="multipart/form-data" action="{% url 'add_photo' album.id %}" class="photo-upload-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ photo_form.image.id_for_label }}">Select Photo</label>
+                    {{ photo_form.image }}
+                    {% if photo_form.image.errors %}
+                        <div class="error-message">{{ photo_form.image.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ photo_form.caption.id_for_label }}">Caption</label>
+                    {{ photo_form.caption }}
+                    {% if photo_form.caption.errors %}
+                        <div class="error-message">{{ photo_form.caption.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div style="text-align: center;">
+                    <button type="submit" class="btn-submit">Add Photo</button>
+                </div>
+            </form>
+            
+            {% if photos %}
+                <h3 style="margin-top: 30px;">Photos in this Album</h3>
+                <div class="photo-preview">
+                    {% for photo in photos %}
+                        <div class="photo-item">
+                            <img src="{{ photo.image.url }}" alt="{{ photo.caption }}">
+                            <div class="photo-caption">{{ photo.caption }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <p>Your album will be reviewed by an administrator before it appears in the gallery.</p>
+                <a href="{% url 'my_albums' %}" style="display: inline-block; margin-top: 15px; color: #4a6bff; text-decoration: none; font-weight: 600;">
+                    View My Albums
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

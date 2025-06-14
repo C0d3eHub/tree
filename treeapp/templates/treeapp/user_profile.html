@@ -1,0 +1,294 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }}'s Profile{% endblock %}
+
+{% block extra_head %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+    /* Profile header styles */
+    .profile-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .profile-info {
+        flex: 1;
+        min-width: 250px;
+        padding-right: 20px;
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        background-color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: #6a11cb;
+        margin-right: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .profile-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .profile-username {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 10px;
+    }
+    
+    .profile-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .profile-detail {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    /* Button navigation styles */
+    .profile-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .profile-button {
+        background: white;
+        color: #555;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .profile-button.active {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        color: white;
+        box-shadow: 0 4px 12px rgba(106, 17, 203, 0.3);
+    }
+    
+    .profile-button:hover:not(.active) {
+        background: #f5f5f5;
+        transform: translateY(-2px);
+    }
+    
+    .button-icon {
+        font-size: 1.2rem;
+    }
+    
+    /* Content styles */
+    .content-section {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        display: none;
+    }
+    
+    .content-section.active {
+        display: block;
+    }
+    
+    /* Maximize space for mytree section */
+    #mytree-section {
+        padding: 0;
+        height: calc(100vh - 220px);
+        min-height: 500px;
+    }
+    
+    #posts-section, #albums-section {
+        padding: 20px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .profile-info {
+            padding-right: 0;
+            margin-bottom: 15px;
+        }
+        
+        .profile-avatar {
+            margin: 0 auto 15px;
+        }
+        
+        .profile-details {
+            justify-content: center;
+        }
+        
+        .profile-buttons {
+            flex-wrap: wrap;
+        }
+        
+        .profile-button {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .profile-details .profile-detail .detail-value {
+            word-break: break-all;
+            overflow-wrap: break-word;
+            white-space: normal;
+            font-size: 0.98em;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {{ user.username.0|upper }}
+        </div>
+        <div class="profile-info">
+            <h1 class="profile-name">{{ user_profile.name|default:user.username }}</h1>
+            <div class="profile-username">@{{ user.username }}</div>
+            <div class="profile-details">
+                {% if user_profile.father_name %}
+                <div class="profile-detail">
+                    <span>👨‍👦</span>
+                    <span>{{ user_profile.father_name }}</span>
+                </div>
+                {% endif %}
+                {% if user_profile.blood_group %}
+                <div class="profile-detail">
+                    <span>🩸</span>
+                    <span>{{ user_profile.blood_group }}</span>
+                </div>
+                {% endif %}
+                {% if user_profile.is_blood_donor %}
+                <div class="profile-detail">
+                    <span>❤️</span>
+                    <span>Blood Donor</span>
+                </div>
+                {% endif %}
+                {% if user_profile.gender %}
+                <div class="profile-detail">
+                    <span>👤</span>
+                    <span>{{ user_profile.get_gender_display }}</span>
+                </div>
+                {% endif %}
+                {% if user_profile.date_of_birth %}
+                <div class="profile-detail">
+                    <span>🎂</span>
+                    <span>{{ user_profile.date_of_birth|date:"F j, Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% if is_birthday %}
+            <div class="birthday-message">
+                🎉 Happy Birthday! 🎂
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Button Navigation -->
+    <div class="profile-buttons">
+        <button class="profile-button active" data-section="mytree-section">
+            <span class="button-icon">🌳</span>
+            <span>My Tree</span>
+        </button>
+        <button class="profile-button" data-section="posts-section">
+            <span class="button-icon">📝</span>
+            <span>Posts</span>
+        </button>
+        <button class="profile-button" data-section="albums-section">
+            <span class="button-icon">📸</span>
+            <span>Albums</span>
+        </button>
+    </div>
+    
+    <!-- Content Sections -->
+    <div id="mytree-section" class="content-section active">
+        {% include "treeapp/profile_tabs/mytree_tab.html" %}
+    </div>
+    
+    <div id="posts-section" class="content-section">
+        {% include "treeapp/profile_tabs/posts_tab.html" %}
+    </div>
+    
+    <div id="albums-section" class="content-section">
+        {% include "treeapp/profile_tabs/albums_tab.html" %}
+    </div>
+</div>
+
+<script src="{% static 'treeapp/js/fixed-tree.js' %}"></script>
+<script src="{% static 'treeapp/js/api-tree.js' %}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const buttons = document.querySelectorAll('.profile-button');
+        
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                buttons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Hide all content sections
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // Show the selected content section
+                const sectionId = this.getAttribute('data-section');
+                document.getElementById(sectionId).classList.add('active');
+            });
+        });
+        
+        // Make showTab function available globally
+        window.showTab = function(tabName) {
+            const sectionId = tabName + '-section';
+            
+            // Remove active class from all buttons
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to corresponding button
+            document.querySelector(`.profile-button[data-section="${sectionId}"]`).classList.add('active');
+            
+            // Hide all content sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show the selected content section
+            document.getElementById(sectionId).classList.add('active');
+        };
+    });
+</script>
+{% endblock %}

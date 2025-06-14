@@ -1,0 +1,370 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}{{ album.title }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'treeapp/css/dashboard.css' %}">
+<style>
+    .album-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .album-header {
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .album-title {
+        color: var(--text-dark);
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+        line-height: 1.3;
+    }
+    
+    .album-meta {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        color: var(--text-medium);
+        font-size: 0.95rem;
+        margin-bottom: 15px;
+    }
+    
+    .album-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .album-meta-icon {
+        font-size: 1.1rem;
+    }
+    
+    .album-description {
+        max-width: 700px;
+        margin: 0 auto;
+        color: var(--text-medium);
+        line-height: 1.6;
+    }
+    
+    .album-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .album-photo {
+        position: relative;
+        height: 200px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .album-photo:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .album-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .album-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .album-btn {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        margin: 0 10px;
+    }
+    
+    .album-btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .album-btn-secondary {
+        background: white;
+        color: var(--text-medium);
+        border: 1px solid var(--border-color);
+    }
+    
+    .album-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Gallery Modal */
+    .gallery-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .gallery-content {
+        position: relative;
+        width: 90%;
+        height: 90%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .gallery-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    
+    .gallery-caption {
+        position: absolute;
+        bottom: -40px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: white;
+        font-size: 1rem;
+    }
+    
+    .gallery-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    .gallery-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+    
+    .gallery-prev,
+    .gallery-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(5px);
+    }
+    
+    .gallery-prev {
+        left: 20px;
+    }
+    
+    .gallery-next {
+        right: 20px;
+    }
+    
+    .gallery-prev:hover,
+    .gallery-next:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    @media (max-width: 768px) {
+        .album-title {
+            font-size: 1.8rem;
+        }
+        
+        .album-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+        
+        .album-photo {
+            height: 150px;
+        }
+        
+        .gallery-prev,
+        .gallery-next {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="album-container">
+    <div class="album-header">
+        <h1 class="album-title">{{ album.title }}</h1>
+        <div class="album-meta">
+            <div class="album-meta-item">
+                <span class="album-meta-icon">👤</span>
+                <span>{{ album.user.username }}</span>
+            </div>
+            <div class="album-meta-item">
+                <span class="album-meta-icon">📅</span>
+                <span>{{ album.created_at|date:"F j, Y" }}</span>
+            </div>
+            <div class="album-meta-item">
+                <span class="album-meta-icon">🖼️</span>
+                <span>{{ album.photos.count }} photos</span>
+            </div>
+        </div>
+        {% if album.description %}
+        <div class="album-description">
+            {{ album.description }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="album-grid">
+        {% for photo in album.photos.all %}
+        <div class="album-photo" data-index="{{ forloop.counter0 }}" data-src="{{ photo.image.url }}" data-caption="{{ photo.caption }}">
+            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:album.title }}">
+        </div>
+        {% empty %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 50px 0; color: var(--text-medium);">
+            No photos in this album yet.
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="album-actions">
+        <a href="{% url 'gallery' %}" class="album-btn album-btn-secondary">Back to Albums</a>
+        
+        {% if user == album.user %}
+        <a href="{% url 'edit_album' album.id %}" class="album-btn album-btn-primary">Edit Album</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Gallery Modal -->
+<div class="gallery-modal" id="galleryModal">
+    <div class="gallery-content">
+        <img src="" alt="" class="gallery-image" id="galleryImage">
+        <div class="gallery-caption" id="galleryCaption"></div>
+        <button class="gallery-close" id="galleryClose">×</button>
+        <button class="gallery-prev" id="galleryPrev">❮</button>
+        <button class="gallery-next" id="galleryNext">❯</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const photos = document.querySelectorAll('.album-photo');
+        const modal = document.getElementById('galleryModal');
+        const modalImg = document.getElementById('galleryImage');
+        const modalCaption = document.getElementById('galleryCaption');
+        const closeBtn = document.getElementById('galleryClose');
+        const prevBtn = document.getElementById('galleryPrev');
+        const nextBtn = document.getElementById('galleryNext');
+        
+        let currentIndex = 0;
+        const photoData = [];
+        
+        // Collect all photo data
+        photos.forEach(photo => {
+            photoData.push({
+                src: photo.getAttribute('data-src'),
+                caption: photo.getAttribute('data-caption') || ''
+            });
+            
+            photo.addEventListener('click', function() {
+                currentIndex = parseInt(this.getAttribute('data-index'));
+                openModal(currentIndex);
+            });
+        });
+        
+        function openModal(index) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            showPhoto(index);
+        }
+        
+        function closeModal() {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function showPhoto(index) {
+            if (index < 0) index = photoData.length - 1;
+            if (index >= photoData.length) index = 0;
+            
+            currentIndex = index;
+            modalImg.src = photoData[index].src;
+            modalCaption.textContent = photoData[index].caption;
+        }
+        
+        function showPrevPhoto() {
+            showPhoto(currentIndex - 1);
+        }
+        
+        function showNextPhoto() {
+            showPhoto(currentIndex + 1);
+        }
+        
+        closeBtn.addEventListener('click', closeModal);
+        prevBtn.addEventListener('click', showPrevPhoto);
+        nextBtn.addEventListener('click', showNextPhoto);
+        
+        // Close modal on outside click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (modal.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    closeModal();
+                } else if (e.key === 'ArrowLeft') {
+                    showPrevPhoto();
+                } else if (e.key === 'ArrowRight') {
+                    showNextPhoto();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+{% block title %}Community Posts{% endblock %}
+
+{% block extra_head %}
+<style>
+    .posts-header {
+        background: linear-gradient(135deg, #9c27b0, #ba68c8);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .posts-title {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .posts-subtitle {
+        margin-top: 10px;
+        opacity: 0.9;
+    }
+    
+    .posts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .post-item {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border-left: 4px solid #9c27b0;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .post-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .post-title {
+        margin: 0 0 15px 0;
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .post-content {
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    
+    .post-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .post-author {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .author-avatar {
+        width: 30px;
+        height: 30px;
+        background: #e0e0e0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .post-date {
+        color: #777;
+        font-size: 0.9rem;
+    }
+    
+    .post-category {
+        display: inline-block;
+        padding: 5px 12px;
+        background: #9c27b0;
+        color: white;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .post-category.news { background: #2196f3; }
+    .post-category.event { background: #4caf50; }
+    .post-category.history { background: #ff9800; }
+    .post-category.other { background: #9c27b0; }
+    
+    .post-link {
+        display: inline-block;
+        margin-top: 10px;
+        color: #9c27b0;
+        font-weight: 500;
+        text-decoration: none;
+    }
+    
+    .post-link:hover {
+        text-decoration: underline;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        color: #9c27b0;
+    }
+    
+    .empty-state h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+    
+    .empty-state p {
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.5;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    /* Fix for navbar user icons and logout button */
+    .navbar-user span {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    .navbar-user a {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        margin-left: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .navbar-user a:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    @media (max-width: 768px) {
+        .create-post-form, .post-form {
+            width: 100% !important;
+            max-width: 100vw !important;
+            box-sizing: border-box !important;
+            padding: 10px !important;
+            border-radius: 10px !important;
+            box-shadow: none !important;
+        }
+        .create-post-form input,
+        .create-post-form textarea,
+        .post-form input,
+        .post-form textarea {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            font-size: 1em !important;
+        }
+        .form-actions {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .form-actions .btn,
+        .form-actions a {
+            width: 100% !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+        .btn-cancel {
+            background: #e57373 !important;
+            color: #fff !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="posts-header">
+        <h1 class="posts-title">Community Posts</h1>
+        <p class="posts-subtitle">News, events, and stories from our community</p>
+    </div>
+    
+    {% if posts %}
+        <div class="posts-list">
+            {% for post in posts %}
+                <div class="post-item">
+                    <div class="post-meta">
+                        <div class="post-author">
+                            <div class="author-avatar">{{ post.user.username.0|upper }}</div>
+                            <span>{{ post.user.username }}</span>
+                        </div>
+                        <span class="post-date">{{ post.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <h2 class="post-title">{{ post.title }}</h2>
+                    
+                    <div class="post-content">
+                        {{ post.content|truncatechars:200 }}
+                    </div>
+                    
+                    <span class="post-category {{ post.category }}">{{ post.get_category_display }}</span>
+                    
+                    <div>
+                        <a href="{% url 'view_post' post.id %}" class="post-link">Read more →</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3>No Posts Yet</h3>
+            <p>There are no posts available yet. Check back soon for news, events, and stories from our community.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

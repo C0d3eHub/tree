@@ -1,0 +1,56 @@
+{% extends "treeapp/base.html" %}
+{% load static %}
+
+{% block content %}
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="tree-page">
+  <!-- Tree Controls -->
+  <div class="tree-controls">
+    <button id="add-name" data-add-member-url="{% url 'add_member' %}" title="Add Name">
+      <i class="fas fa-user-plus"></i> <span class="btn-text">Add</span>
+    </button>
+    <button id="reset-zoom" title="Reset Zoom">
+      <i class="fas fa-search-minus"></i> <span class="btn-text">Reset</span>
+    </button>
+    <button id="reload-tree" title="Reload Tree">
+      <i class="fas fa-sync-alt"></i> <span class="btn-text">Reload</span>
+    </button>
+    <button id="comparenode-btn" style="display:none;" title="Compare">
+      <i class="fas fa-code-compare"></i> <span class="btn-text">Compare</span>
+    </button>
+    <button id="correctionname-btn" style="display:none;" title="Correction">
+      <i class="fas fa-pen"></i> <span class="btn-text">Correct</span>
+    </button>
+    <button id="expand-all" class="tree-control-btn" title="Expand All">
+      <i class="fas fa-plus-square"></i> <span class="btn-text">Expand</span>
+    </button>
+    <button id="collapse-all" class="tree-control-btn" title="Collapse All">
+      <i class="fas fa-minus-square"></i> <span class="btn-text">Collapse</span>
+    </button>
+  </div>
+
+  <div id="tree-container" class="fade-in">
+    <svg id="tree-svg" style="overflow: auto;"></svg>
+  </div>
+  <div id="dynamic-modal-root"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+  // Initialize with empty data, will be loaded via API
+  window.USER_TREE_DATA = {{ tree_data|safe }};
+  
+  // Function to initialize tree with data
+  function initializeTree(data) {
+    window.USER_TREE_DATA = data;
+  }
+</script>
+
+<script src="{% static 'treeapp/js/fixed-tree.js' %}"></script>
+<script src="{% static 'treeapp/js/api-tree.js' %}"></script>
+{% endblock %}

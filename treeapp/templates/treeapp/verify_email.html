@@ -1,0 +1,118 @@
+{% extends 'treeapp/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Verify Email Address</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-center mb-4">
+                        Please enter the OTP sent to your new email address.
+                    </p>
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="POST" action="{% url 'verify_email' %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="otp">Enter OTP</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="otp" 
+                                   name="otp" 
+                                   required 
+                                   pattern="[0-9]{6}" 
+                                   maxlength="6"
+                                   placeholder="Enter 6-digit OTP">
+                        </div>
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">Verify Email</button>
+                            <a href="{% url 'user_dashboard' %}" class="btn btn-secondary ml-2">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    padding: 20px;
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.card-header h3 {
+    margin: 0;
+    color: #2d3436;
+    font-size: 1.5rem;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 12px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    border-color: #74b9ff;
+    box-shadow: 0 0 0 0.2rem rgba(116, 185, 255, 0.25);
+}
+
+.btn {
+    padding: 10px 25px;
+    font-size: 1rem;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #0984e3;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #0873c4;
+}
+
+.btn-secondary {
+    background: #636e72;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #4d5656;
+}
+
+.alert {
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}

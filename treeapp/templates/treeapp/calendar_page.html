@@ -1,0 +1,301 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Your Calendar{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<style>
+    .calendar-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-top: 20px;
+    }
+
+    /* Calendar Header Styling */
+    .fc-toolbar {
+        flex-wrap: wrap !important;
+        gap: 10px;
+    }
+
+    .fc-toolbar-chunk {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .fc-toolbar-title {
+        font-size: 1.2em !important;
+        font-weight: 600;
+        text-align: center;
+        margin: 10px 0 !important;
+    }
+
+    .fc-button {
+        padding: 6px 12px !important;
+        font-size: 0.9em !important;
+    }
+
+    .fc-prev-button,
+    .fc-next-button {
+        padding: 6px 10px !important;
+    }
+
+    .fc-today-button {
+        padding: 6px 12px !important;
+    }
+
+    /* Event Styling */
+    .fc-event {
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 3px;
+        text-align: center;
+        margin: 1px 0;
+    }
+
+    .fc-event-title {
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .fc-event-time {
+        display: none;
+    }
+
+    .fc-daygrid-event {
+        text-align: center;
+        padding: 2px 4px;
+        margin: 1px 0;
+    }
+
+    .fc-daygrid-day {
+        text-align: center;
+    }
+
+    .fc-daygrid-day-number {
+        text-align: center;
+        padding: 4px;
+    }
+
+    .fc-button-primary {
+        background-color: #4CAF50 !important;
+        border-color: #4CAF50 !important;
+    }
+
+    .fc-button-primary:hover {
+        background-color: #45a049 !important;
+        border-color: #45a049 !important;
+    }
+
+    /* Mobile Responsive Styles */
+    @media screen and (max-width: 768px) {
+        .fc-toolbar {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .fc-toolbar-chunk {
+            margin: 5px 0;
+        }
+
+        .fc-header-toolbar {
+            margin-bottom: 1.5em !important;
+        }
+
+        .fc-toolbar-title {
+            font-size: 1.1em !important;
+            margin: 5px 0 !important;
+        }
+
+        .fc-button {
+            padding: 4px 8px !important;
+            font-size: 0.85em !important;
+        }
+
+        .calendar-container {
+            padding: 10px;
+        }
+    }
+
+    .back-button,
+    .reset-button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        color: white;
+    }
+
+    .back-button {
+        background-color: #6c757d;
+    }
+
+    .back-button:hover {
+        background-color: #5a6268;
+    }
+
+    .reset-button {
+        background-color: #4CAF50;
+    }
+
+    .reset-button:hover {
+        background-color: #45a049;
+    }
+
+    /* Modal Styling */
+    #eventDetailModal {
+        display: none;
+        position: fixed;
+        z-index: 1001;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        justify-content: center;
+        align-items: center;
+    }
+
+    #eventDetailModal > div {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 400px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        position: relative;
+        text-align: center;
+    }
+
+    #closeEventModal {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #closeEventModal:hover,
+    #closeEventModal:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .fc-event:hover {
+        opacity: 0.9;
+        transform: scale(1.02);
+        transition: all 0.2s ease;
+    }
+
+    .fc-day-today {
+        background-color: #e8f5e9 !important;
+    }
+
+    .fc-daygrid-day.fc-day-today {
+        background-color: #e8f5e9 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-dashboard" style="max-width: 900px; margin: 40px auto;">
+    <h1 style="text-align: center; color: #333;">Your Events Calendar</h1>
+    
+    <div class="calendar-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <a href="{% url 'user_dashboard' %}" class="back-button">Back to Dashboard</a>
+        <button id="resetCalendarBtn" class="reset-button">Reset Calendar</button>
+    </div>
+
+    <div class="calendar-container">
+        <div id="calendar"></div>
+    </div>
+
+    {# Event Detail Modal #}
+    <div id="eventDetailModal" style="display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); justify-content: center; align-items: center;">
+        <div style="background-color: #fefefe; margin: auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; text-align: center;">
+            <span id="closeEventModal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            <h3 id="eventModalTitle" style="margin-top: 0; color: #4a6bff;"></h3>
+            <p id="eventModalDescription" style="color: #666;"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const eventDetailModal = document.getElementById('eventDetailModal');
+    const closeEventModal = document.getElementById('closeEventModal');
+    const eventModalTitle = document.getElementById('eventModalTitle');
+    const eventModalDescription = document.getElementById('eventModalDescription');
+
+    if (calendarEl) {
+        const calendarEventsData = JSON.parse(`{{ calendar_events|escapejs }}`);
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,dayGridYear'
+            },
+            events: calendarEventsData,
+            eventContent: function(arg) {
+                return {
+                    html: `<div class="fc-content">
+                            <div class="fc-title">${arg.event.title}</div>
+                          </div>`
+                };
+            },
+            eventClick: function(info) {
+                const eventType = info.event.extendedProps.type;
+                const eventName = info.event.title;
+                eventModalTitle.textContent = eventName;
+                eventModalDescription.textContent = `This is ${eventName}!`;
+                eventDetailModal.style.display = 'flex';
+            },
+            eventDidMount: function(info) {
+                // Add tooltip
+                info.el.title = info.event.title;
+            }
+        });
+        calendar.render();
+
+        // Add reset button functionality
+        const resetBtn = document.getElementById('resetCalendarBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                calendar.today();
+            });
+        }
+    }
+
+    // Close modal when close button is clicked
+    if (closeEventModal) {
+        closeEventModal.addEventListener('click', function() {
+            eventDetailModal.style.display = 'none';
+        });
+    }
+
+    // Close modal when clicking outside of it
+    if (eventDetailModal) {
+        eventDetailModal.addEventListener('click', function(event) {
+            if (event.target == eventDetailModal) {
+                eventDetailModal.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

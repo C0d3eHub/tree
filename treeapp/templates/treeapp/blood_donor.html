@@ -1,0 +1,191 @@
+{% extends 'treeapp/base.html' %}
+
+{% block title %}Become a Blood Donor{% endblock %}
+
+{% block content %}
+<div class="blood-bank-container">
+    <div class="blood-bank-header">
+        <h1>Become a Blood Donor</h1>
+        <p>Your donation can save lives</p>
+    </div>
+    
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="donor-form-container">
+        <form method="post" class="donor-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_name">Full Name</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div class="error-message">{{ form.name.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_phone">Phone Number</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                    <div class="error-message">{{ form.phone.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_blood_group">Blood Group</label>
+                {{ form.blood_group }}
+                {% if form.blood_group.errors %}
+                    <div class="error-message">{{ form.blood_group.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_address">Address (Optional)</label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                    <div class="error-message">{{ form.address.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'blood_bank' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Submit Donation</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.blood-bank-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.blood-bank-header {
+    text-align: center;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, #3949ab, #1e88e5);
+    padding: 40px 20px;
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 10px 20px rgba(30, 136, 229, 0.2);
+}
+
+.blood-bank-header h1 {
+    font-size: 2.8rem;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.blood-bank-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.donor-form-container {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.donor-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #1e88e5;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.1);
+}
+
+.error-message {
+    color: #d32f2f;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #43a047, #66bb6a);
+    color: white;
+}
+
+.btn-secondary {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .blood-bank-header h1 {
+        font-size: 2rem;
+    }
+    
+    .donor-form-container {
+        padding: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

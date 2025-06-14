@@ -1,0 +1,308 @@
+{% load static %}
+
+<div class="albums-container">
+    <div class="albums-header">
+        <h2>My Albums</h2>
+        <a href="{% url 'add_album' %}" class="action-button">
+            <span class="action-icon">📸</span>
+            <span>Create New Album</span>
+        </a>
+    </div>
+    
+    {% if user_albums %}
+        <div class="albums-grid">
+            {% for album in user_albums %}
+                <div class="album-card">
+                    <div class="album-cover">
+                        {% if album.photos.first %}
+                            <img src="{{ album.photos.first.image.url }}" alt="{{ album.title }}">
+                        {% else %}
+                            <div class="no-photos">
+                                <span class="no-photos-icon">📷</span>
+                                <span class="no-photos-text">No photos</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="album-overlay">
+                            <span class="photo-count">{{ album.photos.count }} photos</span>
+                            {% if not album.is_approved %}
+                                <span class="approval-badge pending">Pending Approval</span>
+                            {% else %}
+                                <span class="approval-badge approved">Approved</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="album-info">
+                        <h3 class="album-title">{{ album.title }}</h3>
+                        <p class="album-description">{{ album.description|truncatechars:100 }}</p>
+                        <div class="album-meta">
+                            <span class="album-date">{{ album.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="album-actions">
+                        <a href="{% url 'view_album' album.id %}" class="album-action-btn view">View Album</a>
+                        <a href="{% url 'edit_album' album.id %}" class="album-action-btn edit">Edit</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📸</div>
+            <h3>No Albums Yet</h3>
+            <p>You haven't created any photo albums yet. Share your memories with the family.</p>
+            <a href="{% url 'add_album' %}" class="empty-state-action">Create Your First Album</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .albums-container {
+        position: relative;
+    }
+    
+    .albums-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .albums-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 1.5rem;
+    }
+    
+    .action-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #4a6bff, #6c5ce7);
+        color: white;
+        padding: 10px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(74, 107, 255, 0.2);
+    }
+    
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(74, 107, 255, 0.3);
+    }
+    
+    .action-icon {
+        font-size: 1.2rem;
+    }
+    
+    .albums-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+    }
+    
+    .album-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .album-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .album-cover {
+        height: 180px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .album-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .album-card:hover .album-cover img {
+        transform: scale(1.05);
+    }
+    
+    .no-photos {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+    }
+    
+    .no-photos-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #aaa;
+    }
+    
+    .no-photos-text {
+        color: #888;
+        font-size: 0.9rem;
+    }
+    
+    .album-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .photo-count {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .approval-badge {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .approval-badge.pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .approval-badge.approved {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .album-info {
+        padding: 15px;
+    }
+    
+    .album-title {
+        margin: 0 0 10px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .album-description {
+        margin: 0 0 15px 0;
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    .album-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .album-date {
+        color: #777;
+        font-size: 0.85rem;
+    }
+    
+    .album-actions {
+        display: flex;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .album-action-btn {
+        flex: 1;
+        text-align: center;
+        padding: 12px 0;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .album-action-btn.view {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    
+    .album-action-btn.edit {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+    
+    .album-action-btn:hover {
+        opacity: 0.9;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        color: #4a6bff;
+    }
+    
+    .empty-state h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+    
+    .empty-state p {
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto 20px;
+    }
+    
+    .empty-state-action {
+        display: inline-block;
+        background: linear-gradient(135deg, #4a6bff, #6c5ce7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .empty-state-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(74, 107, 255, 0.3);
+    }
+    
+    @media (max-width: 768px) {
+        .albums-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .albums-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+    }
+</style>

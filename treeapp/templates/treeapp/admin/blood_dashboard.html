@@ -1,0 +1,293 @@
+{% extends 'treeapp/base.html' %}
+
+{% block title %}Blood Bank Dashboard | Admin{% endblock %}
+
+{% block content %}
+<div class="blood-dashboard-container">
+    <h1>Blood Bank Dashboard</h1>
+    
+    <div class="dashboard-cards">
+        <div class="dashboard-card">
+            <h2>Blood Donation Statistics</h2>
+            <div class="stats-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Blood Group</th>
+                            <th>Donors</th>
+                            <th>Requests</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group, stats in blood_stats.items %}
+                        <tr>
+                            <td><span class="blood-badge">{{ group }}</span></td>
+                            <td>{{ stats.donors }}</td>
+                            <td>{{ stats.needs }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="total-row">
+                            <td>Total</td>
+                            <td>{{ total_donors }}</td>
+                            <td>{{ total_needs }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="dashboard-card">
+            <h2>Recent Blood Requests</h2>
+            {% if recent_requests %}
+            <div class="recent-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Blood Group</th>
+                            <th>Phone</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in recent_requests %}
+                        <tr>
+                            <td>{{ request.name }}</td>
+                            <td>
+                                {% if request.request_type == 'donate' %}
+                                <span class="type-badge donate">Donor</span>
+                                {% else %}
+                                <span class="type-badge need">Need</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="blood-badge">{{ request.blood_group }}</span></td>
+                            <td>{{ request.phone }}</td>
+                            <td>{{ request.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if request.request_type == 'donate' %}
+                                    {% for d in donation_status %}
+                                        {% if d.obj.id == request.id %}{{ d.status }}{% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {% for n in need_status %}
+                                        {% if n.obj.id == request.id %}{{ n.status }}{% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">No recent blood requests.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="dashboard-card full-width">
+        <h2>Blood Group Compatibility</h2>
+        <div class="compatibility-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Blood Type</th>
+                        <th>Can Donate To</th>
+                        <th>Can Receive From</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>A+</td>
+                        <td>A+, AB+</td>
+                        <td>A+, A-, O+, O-</td>
+                    </tr>
+                    <tr>
+                        <td>A-</td>
+                        <td>A+, A-, AB+, AB-</td>
+                        <td>A-, O-</td>
+                    </tr>
+                    <tr>
+                        <td>B+</td>
+                        <td>B+, AB+</td>
+                        <td>B+, B-, O+, O-</td>
+                    </tr>
+                    <tr>
+                        <td>B-</td>
+                        <td>B+, B-, AB+, AB-</td>
+                        <td>B-, O-</td>
+                    </tr>
+                    <tr>
+                        <td>AB+</td>
+                        <td>AB+</td>
+                        <td>All Types</td>
+                    </tr>
+                    <tr>
+                        <td>AB-</td>
+                        <td>AB+, AB-</td>
+                        <td>A-, B-, AB-, O-</td>
+                    </tr>
+                    <tr>
+                        <td>O+</td>
+                        <td>A+, B+, AB+, O+</td>
+                        <td>O+, O-</td>
+                    </tr>
+                    <tr>
+                        <td>O-</td>
+                        <td>All Types</td>
+                        <td>O-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="admin-links">
+        <a href="{% url 'admin_user_list' %}" class="admin-link">Back to User Management</a>
+        <a href="{% url 'blood_bank' %}" class="admin-link blood">View Blood Bank</a>
+    </div>
+</div>
+
+<style>
+.blood-dashboard-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.blood-dashboard-container h1 {
+    color: #e53935;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.dashboard-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.dashboard-card {
+    flex: 1;
+    min-width: 300px;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.dashboard-card h2 {
+    color: #e53935;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.full-width {
+    flex-basis: 100%;
+}
+
+.stats-table, .recent-table, .compatibility-table {
+    overflow-x: auto;
+}
+
+.stats-table table, .recent-table table, .compatibility-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table th, .stats-table td,
+.recent-table th, .recent-table td,
+.compatibility-table th, .compatibility-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.stats-table th, .recent-table th, .compatibility-table th {
+    font-weight: 600;
+    color: #555;
+}
+
+.total-row {
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+.blood-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: #e53935;
+    color: white;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.type-badge.donate {
+    background-color: #43a047;
+    color: white;
+}
+
+.type-badge.need {
+    background-color: #e53935;
+    color: white;
+}
+
+.no-data {
+    text-align: center;
+    color: #757575;
+    padding: 20px 0;
+}
+
+.admin-links {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.admin-link {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background-color: #1976d2;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.admin-link:hover {
+    background-color: #1565c0;
+}
+
+.admin-link.blood {
+    background-color: #e53935;
+    margin-left: 10px;
+}
+
+.admin-link.blood:hover {
+    background-color: #c62828;
+}
+
+@media (max-width: 768px) {
+    .dashboard-cards {
+        flex-direction: column;
+    }
+    
+    .dashboard-card {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

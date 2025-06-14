@@ -1,0 +1,513 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+{% block title %}Instructions | Family Tree{% endblock %}
+{% block content %}
+<style>
+.page-title {
+    text-align: center;
+    margin: 30px 0;
+    color: #ff9800;
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+}
+
+.instructions-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    opacity: 0;
+    animation: fadeIn 0.5s ease-in forwards;
+}
+
+.instruction-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0;
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+.instruction-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.instruction-section h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.4rem;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.instruction-section h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: #ff9800;
+    transition: width 0.3s ease;
+}
+
+.instruction-section:hover h3::after {
+    width: 100px;
+}
+
+.instruction-section ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.instruction-section li {
+    margin-bottom: 12px;
+    padding-left: 25px;
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.instruction-section li:hover {
+    transform: translateX(5px);
+}
+
+.instruction-section li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #ff9800;
+    font-size: 1.2em;
+}
+
+.instruction-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.instruction-feature-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: scaleIn 0.5s ease-out forwards;
+}
+
+.instruction-feature-card:nth-child(1) { animation-delay: 0.4s; }
+.instruction-feature-card:nth-child(2) { animation-delay: 0.6s; }
+.instruction-feature-card:nth-child(3) { animation-delay: 0.8s; }
+
+.instruction-feature-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+.instruction-feature-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.instruction-feature-icon {
+    font-size: 28px;
+    margin-right: 15px;
+    transition: transform 0.3s ease;
+}
+
+.instruction-feature-card:hover .instruction-feature-icon {
+    transform: scale(1.2);
+}
+
+.instruction-feature-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #ff9800;
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    margin-top: 15px;
+    transition: all 0.3s ease;
+    border: 2px solid #ff9800;
+    font-weight: 500;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.instruction-feature-btn:hover {
+    background: transparent;
+    color: #ff9800;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.2);
+}
+
+.quick-guide-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.35);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+.quick-guide-modal.active {
+  display: flex;
+}
+.quick-guide-content {
+  background: #fff;
+  border-radius: 14px;
+  max-width: 420px;
+  width: 90vw;
+  padding: 32px 24px 24px 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  text-align: left;
+  position: relative;
+}
+.quick-guide-content h2 {
+  margin-top: 0;
+  color: #43a047;
+  font-size: 1.3rem;
+}
+.quick-guide-content ul {
+  padding-left: 18px;
+  margin-bottom: 0;
+}
+.quick-guide-close {
+  position: absolute;
+  top: 10px; right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #888;
+  cursor: pointer;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .instructions-container {
+        padding: 15px;
+    }
+
+    .instruction-section {
+        padding: 20px;
+    }
+
+    .instruction-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .instruction-feature-card {
+        padding: 20px;
+    }
+
+    .instruction-feature-btn {
+        width: 100%;
+        text-align: center;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .instruction-section h3 {
+        font-size: 1.2rem;
+    }
+
+    .instruction-feature-icon {
+        font-size: 24px;
+    }
+
+    .instruction-feature-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+}
+
+/* New styles */
+.section-spacer {
+    height: 50px;
+}
+
+.help-section {
+    margin-top: 30px;
+}
+
+.help-btn {
+    display: inline-block;
+    padding: 12px 25px;
+    background: #ff9800;
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    border: 2px solid #ff9800;
+    font-weight: 500;
+}
+
+.help-btn:hover {
+    background: transparent;
+    color: #ff9800;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.2);
+}
+
+.back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background-color: #ff9800;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: none;
+}
+
+.back-to-top:hover {
+    background-color: #f57c00;
+}
+
+@media (max-width: 768px) {
+    .back-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 35px;
+        height: 35px;
+        line-height: 35px;
+    }
+}
+</style>
+
+<div class="page-title">
+    <span style="font-size: 2.5rem;">📋</span><br>
+    Instructions
+</div>
+
+<div class="instructions-container">
+    <h2 class="fade-in">📋 How to Use Family Tree</h2>
+    
+    <div class="instruction-section slide-in">
+        <h3>🌳 Viewing the Tree</h3>
+        <ul>
+            <li>Click on any person's name to see their details</li>
+            <li>Click the 🌳 button to see the full family tree</li>
+            <li>Use the share button to share the family tree as an image</li>
+        </ul>
+    </div>
+
+    <div class="instruction-section slide-in">
+        <h3>🔍 Navigation</h3>
+        <ul>
+            <li>Use the search bar to find specific family members</li>
+            <li>Click on a person's name to view their profile</li>
+            <li>Use the zoom controls to adjust the tree view</li>
+        </ul>
+    </div>
+
+    <div class="instruction-section slide-in">
+        <h3>📝 Adding Members</h3>
+        <ul>
+            <li>Click the "Add Member" button to add a new family member</li>
+            <li>Fill in the required information</li>
+            <li>Select the parent of the new member</li>
+        </ul>
+    </div>
+
+    <div class="instruction-section slide-in">
+        <h3>🔄 Updating Information</h3>
+        <ul>
+            <li>Click on a person's name to view their details</li>
+            <li>Use the edit button to update their information</li>
+            <li>Changes will be reviewed by administrators</li>
+        </ul>
+    </div>
+
+    <div class="instruction-section slide-in">
+        <h3>📤 Sharing the Tree</h3>
+        <ul>
+            <li>Click the share button to generate an image of the family tree</li>
+            <li>You can share the image via WhatsApp or download it</li>
+            <li>The image will include all visible family members</li>
+        </ul>
+    </div>
+
+    <!-- Quick Guides Section -->
+    <h3 class="guides-title fade-in">Quick Guides</h3>
+    <div class="instruction-cards">
+        <div class="instruction-feature-card scale-in">
+            <div class="instruction-feature-header">
+                <div class="instruction-feature-icon">🔍</div>
+                <h3>Navigation</h3>
+            </div>
+            <div class="instruction-feature-body">
+                <p>Learn how to navigate and explore the family tree effectively.</p>
+                <a href="#" class="instruction-feature-btn" onclick="openGuideModal('nav')">View Guide</a>
+            </div>
+        </div>
+        
+        <div class="instruction-feature-card scale-in">
+            <div class="instruction-feature-header">
+                <div class="instruction-feature-icon">✏️</div>
+                <h3>Editing</h3>
+            </div>
+            <div class="instruction-feature-body">
+                <p>Step-by-step instructions for updating your information in the tree.</p>
+                <a href="#" class="instruction-feature-btn" onclick="openGuideModal('edit')">View Guide</a>
+            </div>
+        </div>
+        
+        <div class="instruction-feature-card scale-in">
+            <div class="instruction-feature-header">
+                <div class="instruction-feature-icon">📱</div>
+                <h3>Mobile Use</h3>
+            </div>
+            <div class="instruction-feature-body">
+                <p>Tips for using the family tree application on mobile devices.</p>
+                <a href="#" class="instruction-feature-btn" onclick="openGuideModal('mobile')">View Guide</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spacer -->
+    <div class="section-spacer"></div>
+
+    <div class="instruction-section slide-in help-section">
+        <h3>❓ Need Help?</h3>
+        <p>If you need any assistance, please contact us through the help form or email us at kmmbanjani@gmail.com</p>
+        <a href="{% url 'help' %}" class="help-btn">Get Help Now</a>
+    </div>
+</div>
+
+<!-- Back to Top Button -->
+<div id="backToTop" class="back-to-top" onclick="scrollToTop()">⬆️</div>
+
+<!-- Quick Guide Modals -->
+<div class="quick-guide-modal" id="guideModalNav" onclick="if(event.target===this)this.classList.remove('active')">
+  <div class="quick-guide-content">
+    <button class="quick-guide-close" onclick="document.getElementById('guideModalNav').classList.remove('active')">&times;</button>
+    <h2>Navigation Guide</h2>
+    <ul>
+      <li>Use the top menu to access Tree, Gallery, Posts, Blood Bank, and more.</li>
+      <li>On the Tree page, drag to pan and use your mouse wheel or pinch to zoom.</li>
+      <li>Click on a family member to view details or right-click to focus on a branch.</li>
+      <li>On mobile, tap the menu icon (|||) to open navigation.</li>
+    </ul>
+  </div>
+</div>
+<div class="quick-guide-modal" id="guideModalEdit" onclick="if(event.target===this)this.classList.remove('active')">
+  <div class="quick-guide-content">
+    <button class="quick-guide-close" onclick="document.getElementById('guideModalEdit').classList.remove('active')">&times;</button>
+    <h2>Editing Guide</h2>
+    <ul>
+      <li>Log in and go to <b>My Tree</b> from the menu.</li>
+      <li>Click the info icon next to your name, then select <b>Edit Member</b>.</li>
+      <li>Update your details and click Save. Changes may require admin approval.</li>
+      <li>Admins can approve, reject, or unpublish content from the admin dashboard.</li>
+    </ul>
+  </div>
+</div>
+<div class="quick-guide-modal" id="guideModalMobile" onclick="if(event.target===this)this.classList.remove('active')">
+  <div class="quick-guide-content">
+    <button class="quick-guide-close" onclick="document.getElementById('guideModalMobile').classList.remove('active')">&times;</button>
+    <h2>Mobile Use Guide</h2>
+    <ul>
+      <li>The site is fully responsive. Cards and menus stack vertically on mobile.</li>
+      <li>Use the emoji menu for quick access to features.</li>
+      <li>Tap outside open menus or modals to close them.</li>
+      <li>Pinch to zoom and drag to pan the family tree on touch devices.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function openGuideModal(type) {
+  document.getElementById('guideModalNav').classList.remove('active');
+  document.getElementById('guideModalEdit').classList.remove('active');
+  document.getElementById('guideModalMobile').classList.remove('active');
+  if(type==='nav') document.getElementById('guideModalNav').classList.add('active');
+  if(type==='edit') document.getElementById('guideModalEdit').classList.add('active');
+  if(type==='mobile') document.getElementById('guideModalMobile').classList.add('active');
+}
+
+// Back to Top Button
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
+
+window.onscroll = function() {
+    var button = document.getElementById("backToTop");
+    if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+        button.style.display = "block";
+    } else {
+        button.style.display = "none";
+    }
+};
+
+// Add intersection observer for scroll animations
+document.addEventListener('DOMContentLoaded', function() {
+    const sections = document.querySelectorAll('.instruction-section, .instruction-feature-card');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, {
+        threshold: 0.1
+    });
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+});
+</script>
+{% endblock %}

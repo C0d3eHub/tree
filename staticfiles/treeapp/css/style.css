@@ -1,0 +1,63 @@
+.birthday-message {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #ffd700;
+    color: #000;
+    border-radius: 20px;
+    text-align: center;
+    font-weight: bold;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+button.btn-cancel {
+    background: #f5f6fa;
+    color: #636e72;
+    border: 1.5px solid #dfe6e9;
+    border-radius: 6px;
+    padding: 10px 0;
+    font-size: 1rem;
+    font-weight: 500;
+    width: 100%;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    cursor: pointer;
+    margin-bottom: 10px;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+}
+button.btn-cancel:hover {
+    background: #e1e4eb;
+    color: #222f3e;
+    border-color: #b2bec3;
+}
+
+.post-form {
+    padding: 24px 18px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+    max-width: 400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+} 

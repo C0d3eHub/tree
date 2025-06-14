@@ -1,0 +1,149 @@
+{% load static %}
+
+<div class="mytree-container">
+    {% if no_tree %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🌳</div>
+            <h3>Your Family Tree</h3>
+            <p>Your account is not yet linked to the family tree. Please contact an administrator to set up your family connection.</p>
+        </div>
+    {% else %}
+        <div id="tree-container" style="width: 100%; height: 70vh; position: relative;">
+            <svg id="tree-svg" width="100%" height="100%"></svg>
+            <div id="dynamic-modal-root" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 1000; pointer-events: none;">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+        
+        <script>
+            window.IS_MY_TREE = true;
+            window.EDIT_MEMBER_URL = "{% url 'edit_member' 0 %}".replace('0', '{id}');
+            window.USER_TREE_DATA = {{ tree_data_json|safe }};
+            window.userNodeId = {{ member_id|default:"null" }};
+            window.EDITABLE_ANCESTORS = {{ editable_ancestors|default:"[]"|safe }};
+        </script>
+    {% endif %}
+</div>
+
+<style>
+    .mytree-container {
+        position: relative;
+        height: 75vh;
+    }
+    
+    .tree-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 8px;
+        z-index: 10;
+    }
+    
+    .tree-control-btn {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 6px 10px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        font-size: 0.9rem;
+    }
+    
+    .tree-control-btn:hover {
+        background: #f8f9fa;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    
+    .control-icon {
+        font-size: 1rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    
+    .empty-state h3 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 1.3rem;
+    }
+    
+    .empty-state p {
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    
+    @media (max-width: 768px) {
+        .control-text {
+            display: none;
+        }
+        
+        .tree-control-btn {
+            padding: 6px;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const shareBtn = document.getElementById('share-tree-btn');
+    if (!shareBtn) return;
+
+    shareBtn.addEventListener('click', function () {
+        const svg = document.getElementById('tree-svg');
+        if (!svg) {
+            alert('Tree SVG not found!');
+            return;
+        }
+
+        // Set desired HD scale (e.g., 3x for retina/HD)
+        const scale = 3;
+        const width = svg.viewBox.baseVal && svg.viewBox.baseVal.width ? svg.viewBox.baseVal.width : svg.clientWidth || 1000;
+        const height = svg.viewBox.baseVal && svg.viewBox.baseVal.height ? svg.viewBox.baseVal.height : svg.clientHeight || 1000;
+
+        // Serialize SVG
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svg);
+
+        // Create image
+        const img = new Image();
+        const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = function () {
+            // Create HD canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(scale, 0, 0, scale, 0, 0);
+            ctx.drawImage(img, 0, 0);
+
+            // Download as PNG
+            const a = document.createElement('a');
+            a.download = 'mytree-hd.png';
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    });
+});
+</script>

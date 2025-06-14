@@ -1,0 +1,338 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Admin Content Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #FF5722, #FF9800);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .admin-title {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    
+    .admin-subtitle {
+        opacity: 0.9;
+        margin-top: 5px;
+        font-size: 1rem;
+    }
+    
+    .admin-tabs {
+        display: flex;
+        background-color: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .admin-tab {
+        flex: 1;
+        text-align: center;
+        padding: 15px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        color: #555;
+    }
+    
+    .admin-tab.active {
+        background-color: #f8f9fa;
+        color: #FF5722;
+    }
+    
+    .admin-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, #FF5722, #FF9800);
+    }
+    
+    .admin-tab:hover:not(.active) {
+        background-color: #f8f9fa;
+    }
+    
+    .tab-content {
+        background-color: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .content-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .content-header {
+        padding: 15px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .content-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .content-body {
+        padding: 15px;
+    }
+    
+    .content-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        color: #777;
+        font-size: 0.9rem;
+    }
+    
+    .content-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .content-action {
+        flex: 1;
+        text-align: center;
+        padding: 8px 0;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .content-action.approve {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+    
+    .content-action.reject {
+        background: #ffebee;
+        color: #b71c1c;
+    }
+    
+    .content-action.view {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    
+    .content-action:hover {
+        opacity: 0.9;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        color: #FF5722;
+    }
+    
+    .empty-state h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+    }
+    
+    .empty-state p {
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-header">
+        <h1 class="admin-title">Admin Content Dashboard</h1>
+        <p class="admin-subtitle">Manage and approve user-generated content</p>
+    </div>
+    
+    <div class="admin-tabs">
+        <div class="admin-tab {% if active_tab == 'posts' %}active{% endif %}" onclick="showTab('posts')">
+            Posts ({{ pending_posts|length }})
+        </div>
+        <div class="admin-tab {% if active_tab == 'albums' %}active{% endif %}" onclick="showTab('albums')">
+            Albums ({{ pending_albums|length }})
+        </div>
+    </div>
+    
+    <div id="posts-content" class="tab-content" style="{% if active_tab != 'posts' %}display: none;{% endif %}">
+        <h2>Pending Posts</h2>
+        
+        {% if pending_posts %}
+            {% for post in pending_posts %}
+                <div class="content-card">
+                    <div class="content-header">
+                        <h3 class="content-title">{{ post.title }}</h3>
+                        <span class="content-category">{{ post.get_category_display }}</span>
+                    </div>
+                    
+                    <div class="content-body">
+                        <div class="content-meta">
+                            <span>By: {{ post.user.username }}</span>
+                            <span>{{ post.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        <p>{{ post.content|truncatechars:200 }}</p>
+                        
+                        <div class="content-actions">
+                            <a href="{% url 'view_post' post.id %}" class="content-action view">View</a>
+                            <a href="{% url 'approve_post' post.id %}" class="content-action approve">Approve</a>
+                            <a href="{% url 'reject_post' post.id %}" class="content-action reject">Reject</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📝</div>
+                <h3>No Pending Posts</h3>
+                <p>There are no posts waiting for approval at this time.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div id="albums-content" class="tab-content" style="{% if active_tab != 'albums' %}display: none;{% endif %}">
+        <h2>Pending Albums</h2>
+        
+        {% if pending_albums %}
+            {% for album in pending_albums %}
+                <div class="content-card">
+                    <div class="content-header">
+                        <h3 class="content-title">{{ album.title }}</h3>
+                        <span class="content-photos">{{ album.photos.count }} photos</span>
+                    </div>
+                    
+                    <div class="content-body">
+                        <div class="content-meta">
+                            <span>By: {{ album.user.username }}</span>
+                            <span>{{ album.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        <p>{{ album.description|truncatechars:200 }}</p>
+                        
+                        <div class="content-actions">
+                            <a href="{% url 'view_album' album.id %}" class="content-action view">View</a>
+                            <a href="{% url 'approve_album' album.id %}" class="content-action approve">Approve</a>
+                            <a href="{% url 'reject_album' album.id %}" class="content-action reject">Reject</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📸</div>
+                <h3>No Pending Albums</h3>
+                <p>There are no albums waiting for approval at this time.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Published Albums Section -->
+    <h2>Published Albums</h2>
+    {% if recent_albums %}
+    <table style="width:100%;margin-bottom:30px;">
+      <tr>
+        <th>Title</th>
+        <th>User</th>
+        <th>Actions</th>
+      </tr>
+      {% for album in recent_albums %}
+      <tr>
+        <td>{{ album.title }}</td>
+        <td>{{ album.user.username }}</td>
+        <td>
+          <form method="post" action="{% url 'unpublish_album' album.id %}" style="display:inline;">{% csrf_token %}
+            <button type="submit" class="btn btn-sm">Unpublish</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+      <div class="empty-state">No published albums found.</div>
+    {% endif %}
+
+    <!-- Published Posts Section -->
+    <h2>Published Posts</h2>
+    {% if recent_posts %}
+    <table style="width:100%;margin-bottom:30px;">
+      <tr>
+        <th>Title</th>
+        <th>User</th>
+        <th>Actions</th>
+      </tr>
+      {% for post in recent_posts %}
+      <tr>
+        <td>{{ post.title }}</td>
+        <td>{{ post.user.username }}</td>
+        <td>
+          <form method="post" action="{% url 'unpublish_post' post.id %}" style="display:inline;">{% csrf_token %}
+            <button type="submit" class="btn btn-sm">Unpublish</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+      <div class="empty-state">No published posts found.</div>
+    {% endif %}
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab content
+        document.getElementById(tabName + '-content').style.display = 'block';
+        
+        // Add active class to selected tab
+        document.querySelector(`.admin-tab:nth-child(${tabName === 'posts' ? '1' : '2'})`).classList.add('active');
+    }
+</script>
+{% endblock %}

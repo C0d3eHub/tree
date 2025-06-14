@@ -1,0 +1,210 @@
+{% extends "treeapp/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="add-member-page">
+    <div class="add-member-form-container fade-in" id="add-member-form-container">
+        <h2 class="add-member-title">Request to Add New Family Member</h2>
+        <form method="post" autocomplete="off" id="add-member-form">
+            {% csrf_token %}
+            <div class="input-group">
+                {{ form.name.label_tag }}{{ form.name }}
+            </div>
+            <div class="input-group">
+                {{ form.fathername.label_tag }}{{ form.fathername }}
+            </div>
+            <div class="input-group">
+                {{ form.grandfathername.label_tag }}{{ form.grandfathername }}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="submit-btn" id="add-member-submit">Submit</button>
+                <button type="button" class="cancel-btn" id="add-member-cancel">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cancel Modal -->
+    <div class="unique-modal-overlay" id="add-member-cancel-modal" style="display:none;">
+        <div class="unique-modal-content">
+            <div class="unique-modal-title">Are you sure you want to cancel?</div>
+            <div class="unique-modal-actions">
+                <button class="unique-modal-yes" id="add-member-cancel-yes">Yes</button>
+                <button class="unique-modal-no" id="add-member-cancel-no">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    {% if success %}
+    <div class="unique-modal-overlay" id="add-member-success-modal" style="display:flex;">
+        <div class="unique-modal-content">
+            <div class="unique-modal-title" style="color:#27ae60;">&#10004; Data sent successfully!</div>
+            <div class="unique-modal-actions">
+                <a href="{% url 'tree' %}" class="unique-modal-yes" style="background:#27ae60;">OK</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+
+.add-member-page {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafcff;
+}
+.add-member-form-container {
+    background: #fff;
+    padding: 36px 28px 28px 28px;
+    border-radius: 14px;
+    box-shadow: 0 1.5px 18px rgba(80,50,150,0.11);
+    max-width: 350px;
+    width: 100%;
+}
+.add-member-title {
+    text-align: center;
+    color: #7b3fa0;
+    margin-bottom: 24px;
+    font-size: 1.45em;
+    font-weight: bold;
+}
+.input-group {
+    margin-bottom: 16px;
+    width: 100%;
+}
+.tree-input {
+    width: 100%;
+    padding: 13px 13px;
+    border: 1.5px solid #e1e4eb;
+    border-radius: 7px;
+    font-size: 1em;
+    margin-top: 6px;
+    background: #fcfaff;
+    color: #7d3c98;
+    font-weight: 500;
+    outline: none;
+    box-shadow: 0 1px 4px rgba(155, 89, 182, 0.07);
+    transition: border 0.2s, box-shadow 0.2s;
+}
+.tree-input:focus {
+    border: 2px solid #9b59b6;
+    background: #f7f6fb;
+    color: #5e3370;
+}
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 16px;
+}
+.submit-btn, .cancel-btn {
+    background: #9b59b6;
+    color: white;
+    padding: 9px 26px;
+    border: none;
+    border-radius: 21px;
+    font-size: 1em;
+    transition: background 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    box-shadow: 0 1px 6px rgba(155, 89, 182, 0.12);
+}
+.cancel-btn {
+    background: #ec7063;
+}
+.submit-btn:hover, .submit-btn:focus {
+    background: #7d3c98;
+}
+.cancel-btn:hover, .cancel-btn:focus {
+    background: #c0392b;
+}
+@media (max-width: 600px) {
+    .add-member-form-container {
+        padding: 16px 4vw 18px 4vw;
+        max-width: 99vw;
+    }
+}
+
+.unique-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(44, 62, 80, 0.18);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.unique-modal-content {
+    background: #fff;
+    border-radius: 14px;
+    min-width: 260px;
+    max-width: 90vw;
+    padding: 32px 28px 24px 28px;
+    box-shadow: 0 1.5px 18px rgba(80,50,150,0.13);
+    text-align: center;
+    animation: fadeIn 0.3s;
+}
+.unique-modal-title {
+    font-size: 1.16em;
+    font-weight: bold;
+    color: #7b3fa0;
+    margin-bottom: 14px;
+}
+.unique-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 10px;
+}
+.unique-modal-yes, .unique-modal-no {
+    background: #9b59b6;
+    color: #fff;
+    border: none;
+    border-radius: 21px;
+    padding: 8px 28px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.22s;
+    font-weight: 500;
+    text-decoration: none;
+}
+.unique-modal-no {
+    background: #ec7063;
+}
+.unique-modal-yes:hover, .unique-modal-no:hover {
+    opacity: 0.9;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98);}
+    to { opacity: 1; transform: scale(1);}
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cancel button opens modal
+    const cancelBtn = document.getElementById('add-member-cancel');
+    const modal = document.getElementById('add-member-cancel-modal');
+    const modalYes = document.getElementById('add-member-cancel-yes');
+    const modalNo = document.getElementById('add-member-cancel-no');
+    cancelBtn.onclick = function(e) {
+        e.preventDefault();
+        modal.style.display = "flex";
+    };
+    modalNo.onclick = function() {
+        modal.style.display = "none";
+    };
+    modalYes.onclick = function() {
+        window.location.href = "{% url 'tree' %}";
+    };
+
+    // If user presses ESC, close modal
+    document.addEventListener('keydown', function(e){
+        if(modal.style.display === "flex" && e.key === "Escape") modal.style.display = "none";
+    });
+});
+</script>
+{% endblock %}

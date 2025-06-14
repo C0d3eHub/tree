@@ -1,0 +1,47 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+}
+
+nav {
+    background: #222;
+    color: white;
+    padding: 10px;
+}
+
+nav .menu {
+    display: none;
+}
+
+nav .menu.show {
+    display: block;
+}
+
+footer {
+    background: #eee;
+    text-align: center;
+    padding: 10px;
+    position: relative;
+}
+
+.tree-layout {
+    padding: 10px;
+    overflow: hidden;
+}
+
+button {
+    margin: 5px;
+}
+
+.node rect {
+    stroke-width: 1;
+    rx: 10;
+    ry: 10;
+}
+
+.link {
+    fill: none;
+    stroke: pink;
+    stroke-width: 2px;
+    marker-end: url(#arrow);
+}

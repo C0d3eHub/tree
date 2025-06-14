@@ -1,0 +1,300 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Create New Album{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'treeapp/css/dashboard.css' %}">
+<style>
+    .album-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .form-header {
+        margin-bottom: 25px;
+        text-align: center;
+    }
+    
+    .form-header h1 {
+        color: var(--primary-color);
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .form-header p {
+        color: var(--text-medium);
+    }
+    
+    .album-form {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        padding: 30px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
+    }
+    
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+    
+    .photo-upload-container {
+        margin-top: 30px;
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    
+    .photo-upload-container:hover {
+        border-color: var(--primary-color);
+        background: #f8fafc;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+        color: var(--text-light);
+        margin-bottom: 15px;
+    }
+    
+    .upload-text {
+        color: var(--text-medium);
+        margin-bottom: 20px;
+    }
+    
+    .upload-btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .upload-btn:hover {
+        background: #3a5ae8;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .upload-input {
+        display: none;
+    }
+    
+    .photo-preview {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .preview-item {
+        position: relative;
+        height: 150px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .preview-remove {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 24px;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        color: #e74c3c;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+    
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #3a5ae8;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .btn-secondary {
+        background: white;
+        color: var(--text-medium);
+        border: 1px solid var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+        background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .form-help {
+        margin-top: 5px;
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+    
+    /* Error messages */
+    .errorlist {
+        color: var(--danger-color);
+        list-style-type: none;
+        padding: 0;
+        margin: 5px 0 0 0;
+        font-size: 0.9rem;
+    }
+    
+    @media (max-width: 768px) {
+        .album-form {
+            padding: 20px;
+        }
+        
+        .photo-upload-container {
+            padding: 20px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="album-form-container">
+    <div class="form-header">
+        <h1>Create New Album</h1>
+        <p>Share your memories with family and friends</p>
+    </div>
+    
+    <form method="post" class="album-form" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_title">Album Title</label>
+            {{ form.title.errors }}
+            <input type="text" name="title" id="id_title" class="form-control" required maxlength="200" placeholder="Enter album title" value="{{ form.title.value|default:'' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="id_description">Description (Optional)</label>
+            {{ form.description.errors }}
+            <textarea name="description" id="id_description" class="form-control" placeholder="Write a short description for your album">{{ form.description.value|default:'' }}</textarea>
+        </div>
+        
+        <div class="photo-upload-container">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Upload photos to your album</div>
+            <label for="id_photos" class="upload-btn">Select Photos</label>
+            <input type="file" name="photos" id="id_photos" class="upload-input" multiple accept="image/*">
+            <div class="form-help">You can select multiple photos at once</div>
+            
+            <div class="photo-preview" id="photoPreview"></div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="button" class="btn-cancel" style="width: 100%;" onclick="window.location.href='{% url 'user_dashboard' %}'">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Album</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const photoInput = document.getElementById('id_photos');
+        const photoPreview = document.getElementById('photoPreview');
+        
+        photoInput.addEventListener('change', function() {
+            photoPreview.innerHTML = '';
+            
+            if (this.files) {
+                for (let i = 0; i < this.files.length; i++) {
+                    const file = this.files[i];
+                    
+                    if (!file.type.match('image.*')) {
+                        continue;
+                    }
+                    
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'preview-item';
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        
+                        previewItem.appendChild(img);
+                        photoPreview.appendChild(previewItem);
+                    }
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
