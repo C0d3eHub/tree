@@ -2139,6 +2139,144 @@
     background-color: #45a049 !important;
     border-color: #45a049 !important;
 }
+
+@media (max-width: 600px) {
+  .calendar-btn {
+    width: 100% !important;
+    font-size: 1rem !important;
+    padding: 14px 0 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box;
+    margin-top: 10px;
+  }
+}
+
+/* Recent Donation Button Styles */
+.btn-action.register-donation {
+    background: linear-gradient(45deg, #1565c0, #1976d2);
+    color: white;
+    margin: 10px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-action.register-donation:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(21, 101, 192, 0.2);
+}
+
+.btn-action.register-donation .btn-icon {
+    font-size: 1.2rem;
+    margin-right: 8px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 0;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #1565c0, #1976d2);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.close {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.close:hover {
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #1976d2;
+    outline: none;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
 </style>
 
 {% endblock %}
@@ -2192,6 +2330,18 @@
                     <span style="display:block;padding-right:28px;">💖 Vashisht Family wishing happy anniversary to Mr and Mrs {{ member.name|default:member.user.get_full_name|default:member.user.username }} 💑</span>
                 </div>
             {% endfor %}
+            {% if user_profile.marital_status == 'married' and user_profile.anniversary_date %}
+                {% with today=now|date:"m-d" anniversary=user_profile.anniversary_date|date:"m-d" %}
+                    {% if today == anniversary %}
+                        <div class="anniversary-msg" id="anniversary-msg-user">
+                            <button class="close-btn" onclick="document.getElementById('anniversary-msg-user').style.display='none'">
+                                <span>✖️</span>
+                            </button>
+                            <span style="display:block;padding-right:28px;">💖 Vashisht Family wishing happy anniversary to Mr and Mrs {{ user_profile.name|default:user_profile.user.get_full_name|default:user_profile.user.username }} 💑</span>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
         </div>
     </div>
 
@@ -2339,20 +2489,22 @@
             
             <!-- Blood Bank Tab -->
             <div class="tab-panel" id="blood-panel">
-                
                 <div style="text-align: center; margin-top: 20px;">
                     {% if user_profile.is_blood_donor %}
                         <div class="verified-donor-badge">
                             <span class="donor-check">✓</span>
                             Verified donor
                         </div>
-                        <button class="btn btn-primary" style="margin-top: 10px;">View all blood bank service</button>
+                        <button class="btn-action register-donation" onclick="openRecentDonationModal()">
+                            <span class="btn-icon">📝</span> Register Recent Blood Donation
+                        </button>
+                        <a href="{% url 'blood_bank' %}" class="btn btn-primary" style="margin-top: 10px;">View all blood bank service</a>
                     {% else %}
                         <div class="donate-blood-cta">
                             <div class="donate-slogan">Be a hero, save a life! <span style="color:#e17055;">Donate Blood</span></div>
                             <button class="btn btn-danger" onclick="openDonateEditProfile()">Donate Blood</button>
                         </div>
-                        <button class="btn btn-primary" style="margin-top: 10px;">View all blood bank service</button>
+                        <a href="{% url 'blood_bank' %}" class="btn btn-primary" style="margin-top: 10px;">View all blood bank service</a>
                     {% endif %}
                 </div>
             </div>
@@ -2503,7 +2655,7 @@
                 <div style="text-align:center; padding: 50px 20px; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #4a6bff; margin-bottom: 20px;">View Your Calendar</h2>
                     <p style="color: #666; margin-bottom: 20px;">Click below to view your personalized calendar with birthdays and anniversaries.</p>
-                    <a href="{% url 'calendar_page' %}" class="btn btn-primary">Go to Calendar</a>
+                    <a href="{% url 'calendar_page' %}" class="btn btn-primary calendar-btn">Go to Calendar</a>
                 </div>
             </div>
         </div>
@@ -2653,6 +2805,37 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="hideDonateModal()">Cancel</button>
                     <button type="submit" class="btn btn-danger">Yes, I want to donate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Donation Modal -->
+<div id="recentDonationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Register Recent Donation</h2>
+            <span class="close" onclick="closeRecentDonationModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'register_recent_donation' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="donation_date">Donation Date</label>
+                    <input type="date" id="donation_date" name="donation_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="donation_location">Donation Location</label>
+                    <input type="text" id="donation_location" name="donation_location" class="form-control" placeholder="Hospital, Blood Bank, etc." required>
+                </div>
+                <div class="form-group">
+                    <label for="donation_notes">Additional Notes</label>
+                    <textarea id="donation_notes" name="donation_notes" class="form-control" rows="3" placeholder="Any additional information about your donation"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecentDonationModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Register Donation</button>
                 </div>
             </form>
         </div>
@@ -2868,6 +3051,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+function openRecentDonationModal() {
+    document.getElementById('recentDonationModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRecentDonationModal() {
+    document.getElementById('recentDonationModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    var recentDonationModal = document.getElementById('recentDonationModal');
+    if (event.target == recentDonationModal) {
+        closeRecentDonationModal();
+    }
+}
 </script>
 
 

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from .models import FamilyMember, Correction, Album, AlbumPhoto, Post
+from .models import FamilyMember, Correction, Album, AlbumPhoto, Post, UserLoginInfo, CommitteeMember
 from .forms import AlbumForm, AlbumPhotoForm, PostForm
 from django.contrib.auth.decorators import login_required
 import json
@@ -11,6 +11,14 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import uuid
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.utils import timezone
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+import logging
+from django.core.paginator import Paginator
+
+logger = logging.getLogger(__name__)
 
 def build_tree(member):
     children = list(FamilyMember.objects.filter(parent=member))
@@ -261,7 +269,6 @@ def add_multiple_children(request):
     return render(request, 'treeapp/add_multiple_children.html', {'form': form})
 
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
 from .forms import RegisterForm
 from django.contrib.auth.decorators import login_required
 from .models import UserProfile, FamilyMember
@@ -337,32 +344,52 @@ from django.contrib.auth.models import User
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username')
+        password = request.POST.get('password')
         
-        # Check if user exists first
+        # First check if user exists
         try:
-            user_obj = User.objects.get(username=username)
-            if not user_obj.is_active:
-                return render(request, 'treeapp/login.html', {
-                    'error': 'Your account is pending approval. Please wait for an administrator to approve your account.'
-                })
+            user = User.objects.get(username=username)
+            if not user.is_active:
+                messages.error(request, 'Your account is deactivated. Please contact the administrator for assistance.')
+                return redirect('login')
+            try:
+                if user.userprofile.is_suspended:
+                    messages.error(request, 'Your account has been suspended. Please contact the administrator for assistance.')
+                    return redirect('login')
+            except UserProfile.DoesNotExist:
+                pass
         except User.DoesNotExist:
-            pass
+            messages.error(request, 'Invalid username or password.')
+            return redirect('login')
             
-        # Try to authenticate
+        # Now try to authenticate
         user = authenticate(request, username=username, password=password)
-        
-        if user:
+        if user is not None:
             login(request, user)
+            # Record login info
+            UserLoginInfo.objects.create(
+                user=user,
+                login_time=timezone.now(),
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT')
+            )
             return redirect('user_dashboard')
         else:
-            return render(request, 'treeapp/login.html', {'error': 'Invalid username or password'})
+            messages.error(request, 'Invalid username or password.')
+
     return render(request, 'treeapp/login.html')
 
 def logout_view(request):
+    if request.user.is_authenticated:
+        # Update the last login info with logout time
+        last_login = UserLoginInfo.objects.filter(user=request.user, logout_time__isnull=True).first()
+        if last_login:
+            last_login.logout_time = timezone.now()
+            last_login.save()
     logout(request)
     return redirect('login')
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import FamilyMember, UserProfile
@@ -697,3 +724,43 @@ def upload_tree_image(request):
         'success': False,
         'error': 'Invalid request'
     }, status=400)
+
+@staff_member_required
+def admin_user_list(request):
+    users = User.objects.all().order_by('-date_joined')
+    
+    # Calculate user statistics
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    inactive_users = User.objects.filter(is_active=False).count()
+    suspended_users = User.objects.filter(is_active=False, userlogininfo__is_suspended=True).count()
+    superusers = User.objects.filter(is_superuser=True).count()
+
+    logger.debug(f"Total Users: {total_users}")
+    logger.debug(f"Active Users: {active_users}")
+    logger.debug(f"Inactive Users: {inactive_users}")
+    logger.debug(f"Suspended Users: {suspended_users}")
+    logger.debug(f"Superusers: {superusers}")
+    
+    context = {
+        'users': users,
+        'total_users': total_users,
+        'active_users': active_users,
+        'inactive_users': inactive_users,
+        'suspended_users': suspended_users,
+        'superusers': superusers,
+    }
+    return render(request, 'treeapp/admin_user_list.html', context)
+
+
+from django.shortcuts import render
+
+def committee_page(request):
+    members_list = CommitteeMember.objects.all().order_by('name')
+    paginator = Paginator(members_list, 20)  # Show 20 members per page
+    
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {'page_obj': page_obj}
+    return render(request, 'treeapp/committee.html', context)

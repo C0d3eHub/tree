@@ -1,6 +1,18 @@
 from django.contrib import admin
-from .models import FamilyMember, Correction, AddMember, HelpRequest, UserProfile, BloodRequest, Album, AlbumPhoto, Post, CustomNotification, Donation
+from .models import FamilyMember, Correction, AddMember, HelpRequest, UserProfile, BloodRequest, Album, AlbumPhoto, Post, CustomNotification, Donation, CommitteeMember, RecentDonation
 from django.utils.html import format_html
+
+@admin.register(CommitteeMember)
+class CommitteeMemberAdmin(admin.ModelAdmin):
+    list_display = ('name', 'designation', 'picture_tag')
+    search_fields = ('name', 'designation')
+    readonly_fields = ('picture_tag',)
+
+    def picture_tag(self, obj):
+        if obj.picture:
+            return format_html('<img src="{}" style="max-height:150px; max-width:150px;"/>', obj.picture.url)
+        return "No Image"
+    picture_tag.short_description = 'Picture'
 
 @admin.register(FamilyMember)
 class FamilyMemberAdmin(admin.ModelAdmin):
@@ -113,5 +125,13 @@ class DonationAdmin(admin.ModelAdmin):
     list_display = ('name', 'amount', 'donation_date', 'transaction_id', 'created_at')
     list_filter = ('donation_date', 'created_at')
     search_fields = ('name', 'transaction_id')
+    ordering = ('-donation_date', '-created_at')
+    readonly_fields = ('created_at',)
+
+@admin.register(RecentDonation)
+class RecentDonationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'donation_date', 'donation_location', 'created_at')
+    list_filter = ('donation_date', 'created_at')
+    search_fields = ('user__username', 'donation_location', 'donation_notes')
     ordering = ('-donation_date', '-created_at')
     readonly_fields = ('created_at',)

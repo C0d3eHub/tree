@@ -20,15 +20,116 @@
     {% endif %}
     
     <div class="action-buttons">
-        <a href="{% url 'blood_donor' %}" class="btn-action donor">
-            <span class="btn-icon">❤️</span> Become a Donor
-        </a>
+        {% if is_already_donor %}
+            <button class="btn-action donor" onclick="openDonorMessageModal()">
+                <span class="btn-icon">❤️</span> Become a Donor
+            </button>
+        {% else %}
+            <a href="{% url 'blood_donor' %}" class="btn-action donor">
+                <span class="btn-icon">❤️</span> Become a Donor
+            </a>
+        {% endif %}
         <a href="{% url 'blood_request' %}" class="btn-action need">
             <span class="btn-icon">🩸</span> Request Blood
         </a>
         <button class="btn-action guide" onclick="openQuickGuide()">
             <span class="btn-icon">📖</span> Quick Guide
         </button>
+    </div>
+    
+    <!-- Donor Message Modal -->
+    <div id="donorMessageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Thank You!</h2>
+                <span class="close" onclick="closeDonorMessageModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="donor-message">
+                    <div class="message-icon">✓</div>
+                    <h3>You are already a donor</h3>
+                    <p>Your willingness to donate blood is greatly appreciated.</p>
+                    <button class="btn-action register-donation" onclick="openRecentDonationModal()">
+                        <span class="btn-icon">📝</span> Register Recent Blood Donation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Donation Modal -->
+    <div id="recentDonationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Register Recent Donation</h2>
+                <span class="close" onclick="closeRecentDonationModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'register_recent_donation' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="donation_date">Donation Date</label>
+                        <input type="date" id="donation_date" name="donation_date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="donation_location">Donation Location</label>
+                        <input type="text" id="donation_location" name="donation_location" class="form-control" placeholder="Hospital, Blood Bank, etc." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="donation_notes">Additional Notes</label>
+                        <textarea id="donation_notes" name="donation_notes" class="form-control" rows="3" placeholder="Any additional information about your donation"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeRecentDonationModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Register Donation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Donations Section -->
+    <div class="blood-card recent-donations">
+        <div class="card-header">
+            <div class="header-icon">📋</div>
+            <h2>Recent Blood Donations</h2>
+        </div>
+        <div class="card-body">
+            {% if recent_donations %}
+            <div class="blood-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Donor</th>
+                            <th>Location</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for donation in recent_donations %}
+                        <tr>
+                            <td>{{ donation.donation_date }}</td>
+                            <td>{{ donation.user.userprofile.name|default:donation.user.username }}</td>
+                            <td>{{ donation.donation_location }}</td>
+                            <td>{{ donation.donation_notes|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <p>No recent donations recorded yet.</p>
+                {% if user.is_authenticated and is_already_donor %}
+                <button class="btn-action register-donation" onclick="openRecentDonationModal()">
+                    <span class="btn-icon">📝</span> Register Your First Donation
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
     </div>
     
     <!-- Quick Guide Modal -->
@@ -1233,6 +1334,41 @@ html, body {
         width: 80px;
     }
 }
+
+.donor-message {
+    text-align: center;
+    padding: 20px;
+}
+
+.donor-message .message-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: #43a047;
+}
+
+.donor-message h3 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: #1a237e;
+}
+
+.donor-message p {
+    font-size: 1.1rem;
+    color: #424242;
+    margin-bottom: 20px;
+}
+
+.recent-donations .card-header {
+    background: linear-gradient(45deg, #1565c0, #1976d2);
+}
+
+.recent-donations .empty-state {
+    padding: 40px 20px;
+}
+
+.recent-donations .empty-state .btn-action {
+    margin-top: 20px;
+}
 </style>
 
 <script>
@@ -1246,11 +1382,40 @@ function closeQuickGuide() {
     document.body.style.overflow = 'auto';
 }
 
+function openDonorMessageModal() {
+    document.getElementById('donorMessageModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDonorMessageModal() {
+    document.getElementById('donorMessageModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function openRecentDonationModal() {
+    closeDonorMessageModal();
+    document.getElementById('recentDonationModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRecentDonationModal() {
+    document.getElementById('recentDonationModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
 // Close modal when clicking outside
 window.onclick = function(event) {
-    var modal = document.getElementById('quickGuideModal');
-    if (event.target == modal) {
+    var quickGuideModal = document.getElementById('quickGuideModal');
+    var donorMessageModal = document.getElementById('donorMessageModal');
+    var recentDonationModal = document.getElementById('recentDonationModal');
+    if (event.target == quickGuideModal) {
         closeQuickGuide();
+    }
+    if (event.target == donorMessageModal) {
+        closeDonorMessageModal();
+    }
+    if (event.target == recentDonationModal) {
+        closeRecentDonationModal();
     }
 }
 </script>

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="add-member-page">
     <div class="add-member-form-container fade-in" id="add-member-form-container">
-        <h2 class="add-member-title">Request to Add New Family Member</h2>
+        <h2 class="add-member-title">Request to Add New Family Member <span class="registration-notice">(This is not a registration form) for registration kindly click <a href="{% url 'register' %}">Register here</a></span></h2>
         <form method="post" autocomplete="off" id="add-member-form">
             {% csrf_token %}
             <div class="input-group">
@@ -71,6 +71,22 @@
     color: #7b3fa0;
     margin-bottom: 24px;
     font-size: 1.45em;
+    font-weight: bold;
+}
+.registration-notice {
+    font-size: 0.7em;
+    color: #e74c3c;
+    font-weight: normal;
+    display: block;
+    margin-top: 8px;
+    background: #fdf2f2;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #fadbd8;
+}
+.registration-notice a {
+    color: #c0392b;
+    text-decoration: underline;
     font-weight: bold;
 }
 .input-group {

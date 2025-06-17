@@ -50,6 +50,7 @@ class UserProfile(models.Model):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
     marital_status = models.CharField(max_length=20, choices=[('single', 'Single'), ('married', 'Married'), ('divorced', 'Divorced'), ('widowed', 'Widowed')], blank=True, null=True)
     anniversary_date = models.DateField(null=True, blank=True)
+    is_suspended = models.BooleanField(default=False)
     
     def __str__(self):
         return self.user.username
@@ -207,3 +208,37 @@ class Donation(models.Model):
     
     def __str__(self):
         return f"{self.name} - ₹{self.amount} - {self.donation_date}"
+
+class UserLoginInfo(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_info')
+    login_time = models.DateTimeField(auto_now_add=True)
+    logout_time = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-login_time']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.login_time.strftime('%Y-%m-%d %H:%M:%S')}"
+
+class CommitteeMember(models.Model):
+    name = models.CharField(max_length=100)
+    designation = models.CharField(max_length=100)
+    picture = models.ImageField(upload_to='committee_photos/', null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+class RecentDonation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    donation_date = models.DateField()
+    donation_location = models.CharField(max_length=255)
+    donation_notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-donation_date']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.donation_date}"

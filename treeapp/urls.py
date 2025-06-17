@@ -72,7 +72,6 @@ urlpatterns = [
     path('upload-tree-image/', views.upload_tree_image, name='upload_tree_image'),
     
     # Admin views
-    path('admin-users/', admin_views.admin_user_list, name='admin_user_list'),
     path('activate-user/<int:user_id>/', admin_views.activate_user, name='activate_user'),
     path('deactivate-user/<int:user_id>/', admin_views.deactivate_user, name='deactivate_user'),
     path('set-password/<int:user_id>/', admin_views.set_password, name='set_password'),
@@ -88,6 +87,7 @@ urlpatterns = [
     path('blood-bank/', views_blood.blood_bank_view, name='blood_bank'),
     path('blood-donor/', views_blood.blood_donor_view, name='blood_donor'),
     path('blood-request/', views_blood.blood_request_view, name='blood_request'),
+    path('register-recent-donation/', views_blood.register_recent_donation, name='register_recent_donation'),
     path('verify-otp-custom/', views_blood.verify_otp_custom, name='verify_otp_custom'),
     path('admin-blood-dashboard/', admin_views.admin_blood_dashboard, name='admin_blood_dashboard'),
     path('toggle-hide-donor/<int:user_id>/', toggle_hide_donor, name='toggle_hide_donor'),
@@ -96,6 +96,10 @@ urlpatterns = [
     path('calendar/', views_dashboard.calendar_page, name='calendar_page'),
     path('donate/', views_dashboard.donation_page, name='donation_page'),
     path('record-donation/', views_dashboard.record_donation, name='record_donation'),
+    path('admin/suspend-user/<int:user_id>/', views_dashboard.suspend_user, name='suspend_user'),
+    path('admin/user-list/', views_dashboard.admin_user_list, name='admin_user_list'),
+    path('admin/user/<int:user_id>/login-info/', views_dashboard.user_login_info, name='user_login_info'),
+    path('committee/', views.committee_page, name='committee_page'),
 ]
 
 if settings.DEBUG:

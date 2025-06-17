@@ -110,7 +110,7 @@
 
 {% block content %}
 <div class="page-actions">
-    <a href="{% url 'user_dashboard' %}" class="back-btn">⬅️ Back to User Panel</a>
+    <a href="{% if request.user.is_superuser %}{% url 'admin_user_list' %}{% else %}{% url 'user_dashboard' %}{% endif %}" class="back-btn">⬅️ Back to User Panel</a>
 </div>
 <div class="user-actions">
     <a href="{% url 'add_album_for_user' tree_owner_id %}" class="action-card album-action">

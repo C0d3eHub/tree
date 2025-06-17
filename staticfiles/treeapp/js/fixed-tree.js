@@ -217,8 +217,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Only proceed if the buttons exist
     if (!compareBtn || !correctionBtn) return;
     
-    if (selectedNode && !compareMode) {
+    if (compareMode) {
       compareBtn.style.display = "inline-block";
+      compareBtn.textContent = "Exit Compare Mode";
+      correctionBtn.style.display = "none"; // Hide correction button in compare mode
+    } else if (selectedNode) {
+      compareBtn.style.display = "inline-block";
+      compareBtn.textContent = "Compare Generations";
       correctionBtn.style.display = "inline-block";
     } else {
       compareBtn.style.display = "none";
@@ -494,52 +499,74 @@ document.addEventListener("DOMContentLoaded", function () {
         d.data.year_of_death !== null &&
         d.data.year_of_death !== undefined &&
         d.data.year_of_death !== "";
-      const html = `
-        <div class="modal-overlay" id="info-modal" style="user-select: none; pointer-events: all;">
-          <div class="modal-title" style="margin-bottom:12px; font-size:1.25rem; color:#2c3e50;">
-            <span style="background:linear-gradient(90deg,#9be7ff,#d1c4e9);padding:4px 18px;border-radius:8px;">
-              ${d.data.name || "-"} जी के बारे में जानकारी
+     const html = `
+  <div class="modal-overlay" id="info-modal" style="user-select: none; pointer-events: all;">
+    <div class="modal-title" style="margin-bottom:12px; font-size:1.25rem; color:#2c3e50;">
+      <span style="background:linear-gradient(90deg,#9be7ff,#d1c4e9);padding:4px 18px;border-radius:8px;">
+        ${d.data.name || "-"} जी के बारे में जानकारी
+      </span>
+      ${window.EDIT_MEMBER_URL && d.data && d.data.id ? 
+        `<button 
+            onclick="window.location.href='/edit-member/${d.data.id}/'"
+            class="edit-member-btn"
+            style="display:inline-block; margin-left:10px; background:#4caf50; color:white; 
+                   border-radius:6px; padding:8px 15px; text-align:center; 
+                   text-decoration:none; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);
+                   font-size:15px; transition: all 0.2s ease; cursor:pointer; z-index:2000;
+                   -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+                   position: relative; min-width: 120px; min-height: 40px; border:none;">
+                   <span style="font-size:18px; margin-right:6px; vertical-align:middle; 
+                   background:#fff; color:#4caf50; border-radius:50%; width:22px; height:22px; 
+                   display:inline-block; line-height:22px; text-align:center;">✏️</span>Edit Member</button>` 
+        : ''}
+    </div>
+    <div class="modal-content" style="background:white; padding:20px; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+      <div style="display:flex; gap:20px; align-items:start;">
+        <img src="${picUrl}" alt="${d.data.name}" style="width:120px; height:120px; object-fit:cover; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+        <div style="flex:1;">
+          <p style="margin:0 0 12px; font-size:1.1rem;">
+            <strong style="color:#673ab7;">नाम:</strong> 
+            <span style="background: linear-gradient(90deg, #ff6f91, #ff9671); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:600;">
+              ${d.data.name || "-"}
             </span>
-            ${window.EDIT_MEMBER_URL && d.data && d.data.id ? 
-              `<button 
-                  onclick="window.location.href='/edit-member/${d.data.id}/'"
-                  class="edit-member-btn"
-                  style="display:inline-block; margin-left:10px; background:#4caf50; color:white; 
-                         border-radius:6px; padding:8px 15px; text-align:center; 
-                         text-decoration:none; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2);
-                         font-size:15px; transition: all 0.2s ease; cursor:pointer; z-index:2000;
-                         -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-                         position: relative; min-width: 120px; min-height: 40px; border:none;">
-                         <span style="font-size:18px; margin-right:6px; vertical-align:middle; 
-                         background:#fff; color:#4caf50; border-radius:50%; width:22px; height:22px; 
-                         display:inline-block; line-height:22px; text-align:center;">✏️</span>Edit Member</button>` 
-              : ''}
-          </div>
-          <div class="modal-content" style="background:white; padding:20px; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-            <div style="display:flex; gap:20px; align-items:start;">
-              <img src="${picUrl}" alt="${d.data.name}" style="width:120px; height:120px; object-fit:cover; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-              <div style="flex:1;">
-                <p style="margin:0 0 8px; font-size:1.1rem;"><strong>नाम:</strong> ${d.data.name || "-"}</p>
-                <p style="margin:0 0 8px; font-size:1.1rem;"><strong>पिता का नाम:</strong> ${d.data.father_name || "-"}</p>
-                <p style="margin:0 0 8px; font-size:1.1rem;"><strong>जन्म वर्ष:</strong> ${d.data.date_of_birth ? (function(dateStr){ var d=new Date(dateStr); return (('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()); })(d.data.date_of_birth) : (d.data.year_of_birth || "-")}</p>
-                ${showDeathYear ? `<p style="margin:0 0 8px; font-size:1.1rem;"><strong>मृत्यु वर्ष:</strong> ${d.data.year_of_death}</p>` : ''}
-              </div>
-            </div>
-          </div>
-          <div class="modal-action-row" style="margin-top:16px; text-align:right;">
-            <button id="close-info-modal" style="
-              background:linear-gradient(90deg,#64b5f6,#81d4fa);
-              color:#fff;
-              font-size:1rem;
-              border:none;
-              border-radius:6px;
-              padding:6px 22px;
-              box-shadow:0 1px 5px #b2ebf2;
-              font-weight:600;
-              cursor:pointer;
-            ">OK</button>
-          </div>
-        </div>`;
+          </p>
+          <p style="margin:0 0 12px; font-size:1.1rem;">
+            <strong style="color:#3f51b5;">पिता:</strong> 
+            <span style="background: linear-gradient(90deg, #6a11cb, #2575fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:600;">
+              ${d.data.father_name || "-"}
+            </span>
+          </p>
+          <p style="margin:0 0 12px; font-size:1.1rem;">
+            <strong style="color:#009688;">जन्म वर्ष:</strong> 
+            <span style="background: linear-gradient(90deg, #84fab0, #8fd3f4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:600;">
+              ${d.data.date_of_birth ? (function(dateStr){ var d=new Date(dateStr); return (('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()); })(d.data.date_of_birth) : (d.data.year_of_birth || "-")}
+            </span>
+          </p>
+          ${showDeathYear ? `
+          <p style="margin:0 0 12px; font-size:1.1rem;">
+            <strong style="color:#e53935;">मृत्यु वर्ष:</strong> 
+            <span style="background: linear-gradient(90deg, #f85032, #e73827); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:600;">
+              ${d.data.year_of_death}
+            </span>
+          </p>` : ''}
+        </div>
+      </div>
+    </div>
+    <div class="modal-action-row" style="margin-top:16px; text-align:right;">
+      <button id="close-info-modal" style="
+        background:linear-gradient(90deg,#64b5f6,#81d4fa);
+        color:#fff;
+        font-size:1rem;
+        border:none;
+        border-radius:6px;
+        padding:6px 22px;
+        box-shadow:0 1px 5px #b2ebf2;
+        font-weight:600;
+        cursor:pointer;
+      ">OK</button>
+    </div>
+  </div>`;
+
       modalRoot.innerHTML = html;
       makeModalDraggable(document.getElementById("info-modal"));
       // Use direct onclick assignment instead of addEventListener
@@ -582,22 +609,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("aria-label", "सूचना देखें")
       .on("click", function (event, d) {
         event.stopPropagation();
-        if (compareMode) return;
-        resetHighlight();
-        let match = null;
-        if (d.data.id) {
-          match = d3root.descendants().find((n) => n.data.id === d.data.id);
-        }
-        if (!match && d.data.name) {
-          match = d3root.descendants().find((n) => n.data.name === d.data.name);
-        }
-        if (match) {
-          selectedNode = match;
-          highlightSpineAndSubtree(match);
-          updateActionButtons();
-          if (modalRoot) modalRoot.innerHTML = "";
-        }
-        event.stopPropagation();
+        if (compareMode) return; // If already in compare mode, do nothing
+        // Set the clicked node as selectedNode and highlight it
+        selectedNode = d;
+        highlightSpineAndSubtree(selectedNode);
+        updateActionButtons(); // Make sure compare button is visible
       });
 
     // Add collapse/expand button (➕/➖) outside to the right of the node
@@ -1111,15 +1127,29 @@ document.addEventListener("DOMContentLoaded", function () {
   // Only add event listener if the button exists
   if (compareBtn) {
     compareBtn.addEventListener("click", () => {
-      if (!selectedNode) return;
+      if (compareMode) {
+        exitCompareMode();
+        return;
+      }
+      if (!selectedNode) {
+        showCompareModal(
+          `<div class="modal-title">Comparison Mode</div>
+          <div class="modal-message">Please select a node first to begin comparison.</div>`,
+          true, true // Show only OK button
+        );
+        return;
+      }
+
       compareMode = true;
-      firstNode = null;
+      firstNode = selectedNode; // Auto-select the currently selected node
+      highlightSpineAndSubtree(firstNode); // Highlight the first node
+
       updateActionButtons();
       showCompareModal(
         `<div class="modal-title">Comparison Mode</div>
           <div class="modal-message">
-            <span style="font-weight:bold;color:#0078d7;">Compare generations</span><br>
-            Select <b>first node</b> in the tree to begin.<br>
+            First node: <b>${firstNode.data.name}</b><br>
+            Now select <b>second node</b> to compare generations.
           </div>`,
         true
       );
@@ -1133,26 +1163,19 @@ document.addEventListener("DOMContentLoaded", function () {
       let nodeEl = event.target.closest(".node");
       if (!nodeEl) return;
       let data = d3.select(nodeEl).datum();
-      if (!firstNode) {
-        firstNode = data;
+
+      // If a node is clicked in compare mode and it's the same as the first node
+      if (firstNode && firstNode === data) {
         showCompareModal(
           `<div class="modal-title">Comparison Mode</div>
-        <div class="modal-message">First node: <b>${data.data.name}</b><br>Now select <b>second node</b> to compare generations.</div>`,
+          <div class="modal-message" style="color:#c0392b;">Please select a <b>different node</b> for comparison.</div>`,
           true
         );
         event.stopPropagation();
         return;
-      } else {
-        if (firstNode === data) {
-          showCompareModal(
-            `<div class="modal-title">Comparison Mode</div>
-            <div class="modal-message" style="color:#c0392b;">Please select a <b>different node</b> for comparison.</div>`,
-            true
-          );
-          event.stopPropagation();
-          return;
-        }
-
+      }
+      // If a node is clicked in compare mode and it's a different node, treat it as the second node
+      else if (firstNode && firstNode !== data) {
         const getPathToRoot = (node) => {
           let path = [];
           while (node) {
@@ -1177,24 +1200,20 @@ document.addEventListener("DOMContentLoaded", function () {
         const gap = Math.max(stepsA, stepsB);
 
         showCompareModal(
-          `<div class="modal-title">Comparison Result</div>
-          <div class="modal-message" style="line-height:1.6;">
-            <span style="color:#7d3c98;font-weight:bold;">${firstNode.data.name}</span>
-            <span style="font-size:1.12em;"> vs. </span>
-            <span style="color:#7d3c98;font-weight:bold;">${data.data.name}</span><br>
-            <span style="font-size:115%;color:#0078d7">Generation gap after their common ancestor is <b>${gap}</b></span>
-          </div>`,
-          false,
+          `<div class="modal-title" style="font-size:1.25rem; font-weight:bold; color:#7d3c98;">तुलना परिणाम</div>
+            <div class="modal-message" style="font-size:1.1rem; color:#7d3c98; font-weight:bold;">
+              ${firstNode.data.name} <span style="font-size:1.12em;">vs.</span> ${data.data.name}
+              <br><br>
+              <span style="font-size:115%; color:#0078d7">साझा पूर्वज से दोनों की पीढ़ियों का अंतराल <span style="font-weight:bold;">${gap}</span> है।</span>
+            </div>`,
+          true,
           true
         );
-        comparisonTimeout = setTimeout(() => {
-          exitCompareMode();
-        }, 12000);
         event.stopPropagation();
         return;
       }
     },
-    true
+    { capture: true }
   );
 
   // Only add event listener if the button exists

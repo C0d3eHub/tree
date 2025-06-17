@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from .models import FamilyMember, UserProfile, Post, Album, AlbumPhoto, CustomNotification, Donation
+from .models import FamilyMember, UserProfile, Post, Album, AlbumPhoto, CustomNotification, Donation, UserLoginInfo
 import json
 from datetime import datetime
 import random
@@ -11,278 +11,88 @@ from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.contrib.auth.models import User
+from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def user_dashboard(request):
     """
     Main dashboard view that shows the user's tree, posts, and albums in tabs
     """
-    # Get the user's profile data
-    try:
-        user_profile = request.user.userprofile
-        user_root = user_profile.family_root
-        member_id = user_profile.member_id
-    except (UserProfile.DoesNotExist, AttributeError):
-        user_root = None
-        member_id = None
-        user_profile = None
-
-    # Get user's posts
-    user_posts = Post.objects.filter(user=request.user).order_by('-created_at')
+    user = request.user
+    user_profile = UserProfile.objects.get(user=user)
     
-    # Get user's albums
-    user_albums = Album.objects.filter(user=request.user).order_by('-created_at')
-    
-    # Check if user has a tree
-    no_tree = user_root is None
-    
-    tree_data = {}
-    if not no_tree:
-        # Build direct lineage tree
-        def build_direct_lineage():
-            # Find the main root (topmost ancestor)
-            main_root = None
-            current = user_root
-            ancestors = []
-            
-            # Traverse up to find all ancestors
-            while current:
-                ancestors.append(current)
-                if current.parent is None:
-                    main_root = current
-                    break
-                current = current.parent
-            
-            # Reverse to get top-down order
-            ancestors.reverse()
-            
-            # Start with the main root
-            if not main_root:
-                return None
-                
-            # Create the tree structure
-            tree = {
-                "id": main_root.id,
-                "name": main_root.name,
-                "father_name": None,
-                "year_of_birth": main_root.year_of_birth if main_root.year_of_birth else None,
-                "year_of_death": main_root.year_of_death if main_root.year_of_death else None,
-                "picture": main_root.photo.url if main_root.photo else "",
-                "is_main_root": True,
-                "children": []
-            }
-            
-            # Helper function to add all descendants of a member
-            def add_descendants(node, member):
-                children = FamilyMember.objects.filter(parent=member)
-                for child in children:
-                    child_node = {
-                        "id": child.id,
-                        "name": child.name,
-                        "father_name": member.name,
-                        "year_of_birth": child.year_of_birth if child.year_of_birth else None,
-                        "year_of_death": child.year_of_death if child.year_of_death else None,
-                        "picture": child.photo.url if child.photo else "",
-                        "children": []
-                    }
-                    node["children"].append(child_node)
-                    # Recursively add all descendants
-                    add_descendants(child_node, child)
-            
-            # If member_id is specified, build path from root to member_id
-            if member_id:
-                # Find path from root to member_id
-                path_to_member = []
-                current = member_id
-                
-                # Build the path up to root
-                while current:
-                    path_to_member.append(current)
-                    if current.parent is None:
-                        break
-                    current = current.parent
-                
-                # Reverse to get top-down order
-                path_to_member.reverse()
-                
-                # Build the complete tree structure
-                current_node = tree
-                for i in range(1, len(path_to_member)):
-                    ancestor = path_to_member[i]
-                    # Find the correct parent node to attach this ancestor to
-                    parent_node = None
-                    if i == 1:
-                        parent_node = current_node
-                    else:
-                        # Find the parent node in the tree
-                        def find_parent_node(node, parent_id):
-                            if node["id"] == parent_id:
-                                return node
-                            for child in node["children"]:
-                                result = find_parent_node(child, parent_id)
-                                if result:
-                                    return result
-                            return None
-                        parent_node = find_parent_node(tree, path_to_member[i-1].id)
-                    
-                    if parent_node:
-                        new_node = {
-                            "id": ancestor.id,
-                            "name": ancestor.name,
-                            "father_name": path_to_member[i-1].name,
-                            "year_of_birth": ancestor.year_of_birth if ancestor.year_of_birth else None,
-                            "year_of_death": ancestor.year_of_death if ancestor.year_of_death else None,
-                            "picture": ancestor.photo.url if ancestor.photo else "",
-                            "is_user_root": ancestor.id == user_root.id,
-                            "is_member_id": ancestor.id == member_id.id,
-                            "children": []
-                        }
-                        parent_node["children"].append(new_node)
-                        current_node = new_node
-                
-                # Add all descendants of member_id
-                add_descendants(current_node, member_id)
-            else:
-                # If no member_id, fall back to user_root
-                current_node = tree
-                for i in range(1, len(ancestors)):
-                    ancestor = ancestors[i]
-                    new_node = {
-                        "id": ancestor.id,
-                        "name": ancestor.name,
-                        "father_name": ancestors[i-1].name,
-                        "year_of_birth": ancestor.year_of_birth if ancestor.year_of_birth else None,
-                        "year_of_death": ancestor.year_of_death if ancestor.year_of_death else None,
-                        "picture": ancestor.photo.url if ancestor.photo else "",
-                        "is_user_root": ancestor.id == user_root.id,
-                        "children": []
-                    }
-                    current_node["children"].append(new_node)
-                    current_node = new_node
-                
-                # Add all descendants of user_root
-                add_descendants(current_node, user_root)
-            
-            return tree
-        
-        # Build the direct lineage tree
-        tree_data = build_direct_lineage() or {}
-    
-    # Find ancestors to determine which ones are editable (last 2 roots)
-    editable_ancestors = []
-    if member_id:
-        try:
-            # Start with member_id
-            current = member_id
-            depth = 0
-            
-            # Get the last 2 ancestors
-            while current and depth < 2:
-                editable_ancestors.append(current.id)
-                if not current.parent:
-                    break
-                current = current.parent
-                depth += 1
-        except Exception as e:
-            print(f"Error finding editable ancestors: {e}")
-    
-    member_id_value = None
-    if member_id:
-        try:
-            member_id_value = member_id.id
-        except:
-            member_id_value = None
+    # Get family members
+    family_members = UserProfile.objects.filter(family_root=user_profile.family_root).exclude(user=user)
     
     # Get today's date
-    today = datetime.today()
-    # Find all FamilyMembers whose birthday is today
-    birthday_members = FamilyMember.objects.filter(date_of_birth__month=today.month, date_of_birth__day=today.day)
+    today = timezone.now().date()
     
-    # Find all UserProfiles whose anniversary is today and are married
+    # Get birthday members
+    birthday_members = UserProfile.objects.filter(
+        date_of_birth__month=today.month,
+        date_of_birth__day=today.day
+    ).exclude(user=user)
+    
+    # Get anniversary members (only for married users)
     anniversary_members = UserProfile.objects.filter(
         marital_status='married',
         anniversary_date__month=today.month,
         anniversary_date__day=today.day
-    )
+    ).exclude(user=user)
     
-    # Use FamilyMember's date_of_birth for birthday message for the logged-in user
-    is_birthday = False
-    member = user_profile.member_id if user_profile and user_profile.member_id else None
-    if member and member.date_of_birth:
-        is_birthday = (member.date_of_birth.month == today.month and member.date_of_birth.day == today.day)
-    elif not user_profile and birthday_members.exists():
-        is_birthday = True
+    # Get custom notifications (excluding suspension notifications)
+    custom_notifications = CustomNotification.objects.filter(
+        is_active=True
+    ).exclude(
+        message__icontains='suspended'
+    ).order_by('-created_at')
     
-    # Get active custom notifications
-    custom_notifications = CustomNotification.objects.filter(is_active=True)
-    
-    # Collect calendar events (birthdays and anniversaries)
+    # Get calendar events
     calendar_events = []
     
-    # 1. Get all family members in the user's tree
-    family_members = []
-    if user_profile and user_profile.family_root:
-        def collect_members(member):
-            family_members.append(member)
-            for child in FamilyMember.objects.filter(parent=member):
-                collect_members(child)
-        collect_members(user_profile.family_root)
-
-    # 2. Collect birthdays
-    for member in family_members:
+    # Add birthday events
+    for member in UserProfile.objects.filter(family_root=user_profile.family_root):
         if member.date_of_birth:
-            # Get the month and day from the date of birth
-            month = member.date_of_birth.month
-            day = member.date_of_birth.day
-            
-            # Create a recurring event for each year
-            calendar_events.append({
-                "type": "birthday",
-                "name": f"{member.name}'s Birthday",  # Add 's Birthday to make it clearer
-                "date": f"2024-{month:02d}-{day:02d}",  # Use current year as base
-                "color": "#4CAF50",
-                "backgroundColor": "#4CAF50",
-                "borderColor": "#45a049",
-                "textColor": "#ffffff",
-                "rrule": "FREQ=YEARLY",  # Make it repeat yearly
-                "display": "block"
-            })
-
-    # 3. Collect anniversary (if married)
-    if user_profile and user_profile.marital_status == "married" and user_profile.anniversary_date:
-        # Get the month and day from the anniversary date
-        month = user_profile.anniversary_date.month
-        day = user_profile.anniversary_date.day
-        
-        # Create a recurring event for each year
-        calendar_events.append({
-            "type": "anniversary",
-            "name": f"{user_profile.name or user_profile.user.get_full_name() or user_profile.user.username}'s Anniversary",  # Add 's Anniversary to make it clearer
-            "date": f"2024-{month:02d}-{day:02d}",  # Use current year as base
-            "color": "#4CAF50",
-            "backgroundColor": "#4CAF50",
-            "borderColor": "#45a049",
-            "textColor": "#ffffff",
-            "rrule": "FREQ=YEARLY",  # Make it repeat yearly
-            "display": "block"
-        })
+            # Create events for current year and next 5 years
+            for year in range(today.year, today.year + 6):
+                event_date = member.date_of_birth.replace(year=year)
+                if event_date >= today:
+                    calendar_events.append({
+                        'type': 'birthday',
+                        'title': f"{member.name}'s Birthday",
+                        'start': event_date.isoformat(),
+                        'backgroundColor': '#4CAF50',
+                        'borderColor': '#4CAF50'
+                    })
     
-    return render(request, "treeapp/user_dashboard.html", {
-        "user": request.user,
-        "user_profile": user_profile,
-        "user_posts": user_posts,
-        "user_albums": user_albums,
-        "tree_data_json": json.dumps(tree_data) if tree_data else None,
-        "no_tree": no_tree,
-        "editable_ancestors": json.dumps(editable_ancestors),
-        "member_id": member_id_value,
-        "is_birthday": is_birthday,
-        "birthday_members": birthday_members,
-        "other_birthday_users": [],
-        'custom_notifications': custom_notifications,
+    # Add anniversary events
+    for member in UserProfile.objects.filter(family_root=user_profile.family_root, marital_status='married'):
+        if member.anniversary_date:
+            # Create events for current year and next 5 years
+            for year in range(today.year, today.year + 6):
+                event_date = member.anniversary_date.replace(year=year)
+                if event_date >= today:
+                    calendar_events.append({
+                        'type': 'anniversary',
+                        'title': f"{member.name}'s Anniversary",
+                        'start': event_date.isoformat(),
+                        'backgroundColor': '#ff7e5f',
+                        'borderColor': '#feb47b'
+                    })
+    
+    context = {
+        'user_profile': user_profile,
+        'family_members': family_members,
+        'birthday_members': birthday_members,
         'anniversary_members': anniversary_members,
-        'calendar_events': json.dumps(calendar_events, cls=DjangoJSONEncoder),
-    })
+        'custom_notifications': custom_notifications,
+        'calendar_events': calendar_events,
+    }
+    
+    return render(request, 'treeapp/user_dashboard.html', context)
 
 @login_required
 def add_post(request, user_id=None):
@@ -545,31 +355,24 @@ def verify_email(request):
 @login_required
 def calendar_page(request):
     user_profile = UserProfile.objects.get(user=request.user)
-
     calendar_events = []
     current_year = datetime.now().year
 
-    # Collect all family members in the user's tree
-    family_members = []
-    if user_profile and user_profile.family_root:
-        def collect_members(member):
-            family_members.append(member)
-            for child in FamilyMember.objects.filter(parent=member):
-                collect_members(child)
-        collect_members(user_profile.family_root)
+    # Create a dictionary to store events by date
+    events_by_date = {}
 
-    # Collect birthdays
-    for member in family_members:
+    # Collect birthdays from FamilyMember model
+    def collect_family_members(member):
         if member.date_of_birth:
-            # Get the month and day from the date of birth
             month = member.date_of_birth.month
             day = member.date_of_birth.day
-            
-            # Create events for current year and next 5 years
             for year in range(current_year, current_year + 6):
-                calendar_events.append({
+                date_key = f"{year}-{month:02d}-{day:02d}"
+                if date_key not in events_by_date:
+                    events_by_date[date_key] = []
+                events_by_date[date_key].append({
                     "title": f"{member.name}'s Birthday",
-                    "start": f"{year}-{month:02d}-{day:02d}",
+                    "start": date_key,
                     "allDay": True,
                     "extendedProps": {
                         "type": "birthday"
@@ -578,30 +381,66 @@ def calendar_page(request):
                     "borderColor": "#45a049",
                     "textColor": "#ffffff"
                 })
+        # Recursively collect children's birthdays
+        for child in FamilyMember.objects.filter(parent=member):
+            collect_family_members(child)
 
-    # Collect anniversary (if married)
-    if user_profile and user_profile.marital_status == "married" and user_profile.anniversary_date:
-        # Get the month and day from the anniversary date
-        month = user_profile.anniversary_date.month
-        day = user_profile.anniversary_date.day
-        
-        # Create events for current year and next 5 years
-        for year in range(current_year, current_year + 6):
-            calendar_events.append({
-                "title": f"{user_profile.name or user_profile.user.get_full_name() or user_profile.user.username}'s Anniversary",
-                "start": f"{year}-{month:02d}-{day:02d}",
+    # Start collecting from the root member
+    if user_profile.family_root:
+        collect_family_members(user_profile.family_root)
+
+    # Collect anniversaries from UserProfile
+    family_members = UserProfile.objects.filter(family_root=user_profile.family_root)
+    for member in family_members:
+        if member.marital_status == "married" and member.anniversary_date:
+            month = member.anniversary_date.month
+            day = member.anniversary_date.day
+            for year in range(current_year, current_year + 6):
+                date_key = f"{year}-{month:02d}-{day:02d}"
+                if date_key not in events_by_date:
+                    events_by_date[date_key] = []
+                events_by_date[date_key].append({
+                    "title": f"{member.name}'s Anniversary",
+                    "start": date_key,
+                    "allDay": True,
+                    "extendedProps": {
+                        "type": "anniversary"
+                    },
+                    "backgroundColor": "#ff7e5f",
+                    "borderColor": "#feb47b",
+                    "textColor": "#ffffff"
+                })
+
+    # Add custom notifications
+    custom_notifications = CustomNotification.objects.filter(
+        is_active=True
+    ).exclude(
+        message__icontains='suspended'
+    ).order_by('-created_at')
+
+    for notification in custom_notifications:
+        if notification.notification_date:
+            date_key = notification.notification_date.strftime("%Y-%m-%d")
+            if date_key not in events_by_date:
+                events_by_date[date_key] = []
+            events_by_date[date_key].append({
+                "title": notification.message,
+                "start": date_key,
                 "allDay": True,
                 "extendedProps": {
-                    "type": "anniversary"
+                    "type": "notification"
                 },
-                "backgroundColor": "#4CAF50",
-                "borderColor": "#45a049",
+                "backgroundColor": "#2196F3",
+                "borderColor": "#1976D2",
                 "textColor": "#ffffff"
             })
 
+    # Flatten the events dictionary into a list
+    for date_events in events_by_date.values():
+        calendar_events.extend(date_events)
+
     return render(request, "treeapp/calendar_page.html", {
-        "calendar_events": json.dumps(calendar_events, cls=DjangoJSONEncoder),
-        "user_profile": user_profile,
+        "calendar_events": json.dumps(calendar_events)
     })
 
 def donation_page(request):
@@ -629,3 +468,156 @@ def record_donation(request):
                 'error': str(e)
             })
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def suspend_user(request, user_id):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+    try:
+        user = User.objects.get(id=user_id)
+        profile = UserProfile.objects.get(user=user)
+        # Toggle suspension status
+        profile.is_suspended = not profile.is_suspended
+        profile.save()
+        status = "suspended" if profile.is_suspended else "unsuspended"
+        messages.success(request, f'User {user.username} has been {status} successfully.')
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+    except UserProfile.DoesNotExist:
+        messages.error(request, 'User profile not found.')
+    return redirect('admin_user_list')
+
+@login_required
+def deactivate_user(request, user_id):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+    try:
+        user = User.objects.get(id=user_id)
+        user.is_active = False
+        user.save()
+        messages.success(request, f'User {user.username} has been deactivated successfully.')
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+    return redirect('admin_user_list')
+
+@login_required
+def activate_user(request, user_id):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+    try:
+        user = User.objects.get(id=user_id)
+        user.is_active = True
+        user.save()
+        messages.success(request, f'User {user.username} has been activated successfully.')
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+    return redirect('admin_user_list')
+
+@login_required
+def user_login_info(request, user_id):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+    
+    try:
+        target_user = User.objects.get(id=user_id)
+        login_info = UserLoginInfo.objects.filter(user=target_user).order_by('-login_time')
+        
+        # Calculate durations for each session
+        for session in login_info:
+            if session.logout_time:
+                session.duration = session.logout_time - session.login_time
+            else:
+                session.duration = timezone.now() - session.login_time
+            
+            # Calculate days, hours, minutes
+            total_seconds = session.duration.total_seconds()
+            days = int(total_seconds // 86400)
+            hours = int((total_seconds % 86400) // 3600)
+            minutes = int((total_seconds % 3600) // 60)
+            
+            # Format duration string
+            duration_parts = []
+            if days > 0:
+                duration_parts.append(f"{days}d")
+            if hours > 0:
+                duration_parts.append(f"{hours}h")
+            if minutes > 0:
+                duration_parts.append(f"{minutes}m")
+            
+            session.formatted_duration = " ".join(duration_parts) if duration_parts else "-"
+        
+        total_sessions = login_info.count()
+        current_session = login_info.filter(logout_time__isnull=True).first()
+        
+        context = {
+            'user': target_user,
+            'login_info': login_info,
+            'total_sessions': total_sessions,
+            'current_session': current_session,
+        }
+        return render(request, 'treeapp/user_login_info.html', context)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('admin_user_list')
+
+@login_required
+def admin_user_list(request):
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+
+    # Get all users
+    users = User.objects.all().order_by('-date_joined')
+    
+    # Calculate user statistics
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    inactive_users = User.objects.filter(is_active=False).count()
+    suspended_users = User.objects.filter(userprofile__is_suspended=True).count()
+    superusers = User.objects.filter(is_superuser=True).count()
+    
+    logger.debug(f"Total Users: {total_users}")
+    logger.debug(f"Active Users: {active_users}")
+    logger.debug(f"Inactive Users: {inactive_users}")
+    logger.debug(f"Suspended Users: {suspended_users}")
+    logger.debug(f"Superusers: {superusers}")
+
+    user_data = []
+    for user in users:
+        try:
+            profile = user.userprofile
+        except UserProfile.DoesNotExist:
+            profile = None
+
+        user_data.append({
+            'id': user.id,
+            'username': user.username,
+            'name': profile.name if profile else '',
+            'father_name': profile.father_name if profile else '',
+            'email': user.email,
+            'phone': profile.phone if profile else '',
+            'plain_password': profile.plain_password if profile else '',
+            'is_active': user.is_active,
+            'email_verified': profile.email_verified if profile else False,
+            'userprofile': profile,  # Add the entire profile object
+        })
+
+    # Dashboard card counts
+    total_posts = Post.objects.count()
+    pending_posts_count = Post.objects.filter(is_approved=False).count()
+    total_albums = Album.objects.count()
+    pending_albums_count = Album.objects.filter(is_approved=False).count()
+
+    context = {
+        'user_data': user_data,
+        'total_posts': total_posts,
+        'pending_posts_count': pending_posts_count,
+        'total_albums': total_albums,
+        'pending_albums_count': pending_albums_count,
+        'users': users,
+        'total_users': total_users,
+        'active_users': active_users,
+        'inactive_users': inactive_users,
+        'suspended_users': suspended_users,
+        'superusers': superusers,
+    }
+    return render(request, 'treeapp/admin_user_list.html', context)

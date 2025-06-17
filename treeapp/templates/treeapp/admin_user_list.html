@@ -84,6 +84,11 @@ body {
     border-radius: 18px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
     padding: 2.2rem 1.2rem 1.2rem 1.2rem;
+    cursor: grab;
+    user-select: none;
+}
+.user-table-container:active {
+    cursor: grabbing;
 }
 .user-table {
     width: 100%;
@@ -118,33 +123,27 @@ body {
     color: #757575;
 }
 .password-cell {
-    font-family: monospace;
-    background-color: #fff3e0;
-    color: #e65100;
-    font-weight: 500;
     position: relative;
-    padding-right: 100px;
-    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 .toggle-password {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 18px;
-    padding: 4px;
-    border-radius: 50%;
-    background-color: #f5f5f5;
-    transition: all 0.2s;
+    padding: 0;
+    font-size: 1.1em;
 }
-.toggle-password:hover {
-    background-color: #e0e0e0;
+.badge {
+    margin-right: 5px;
 }
-.actual-password {
-    font-family: monospace;
+.btn-group {
+    display: flex;
+    gap: 5px;
+}
+.text-decoration-none {
+    text-decoration: none !important;
 }
 .status {
     display: inline-block;
@@ -217,10 +216,28 @@ body {
     transform: scale(1.06);
     box-shadow: 0 4px 16px rgba(56,142,60,0.13);
 }
+.btn-action.suspend {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #c62828;
+}
+.btn-action.suspend:hover {
+    background-color: #c62828;
+    color: #fff;
+}
 .btn-action:hover {
     opacity: 0.97;
     text-decoration: none;
     transform: scale(1.04);
+}
+.btn-action.status {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #1976d2;
+}
+.btn-action.status:hover {
+    background-color: #1976d2;
+    color: #fff;
 }
 .admin-links {
     margin: 2.5rem 0 1.5rem 0;
@@ -260,6 +277,15 @@ body {
 .admin-link.content:hover {
     background-color: #7b1fa2;
 }
+.suspended-user {
+    background-color: #fff3cd !important;
+}
+.inactive-user {
+    background-color: #f8d7da !important;
+}
+.suspended-user:hover, .inactive-user:hover {
+    background-color: #ffeeba !important;
+}
 @media (max-width: 900px) {
     .dashboard-cards {
         flex-direction: column;
@@ -290,22 +316,117 @@ body {
         padding: 22px 10px 18px 10px;
     }
 }
+
+/* New styles for statistics table */
+.stats-table-container {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.1rem;
+}
+
+.stats-table th, .stats-table td {
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+}
+
+.stats-table th {
+    background: #e3f2fd;
+    color: #1976d2;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.stats-table td {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #333;
+}
+
+.stats-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.stats-label {
+    font-size: 1rem;
+    color: #666;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .stats-table th, .stats-table td {
+        padding: 0.8rem;
+        font-size: 1rem;
+    }
+    
+    .stats-table td {
+        font-size: 1.4rem;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+    }
+}
 </style>
 <script>
 function togglePassword(button) {
     const cell = button.parentElement;
     const maskedPassword = cell.querySelector('.masked-password');
     const actualPassword = cell.querySelector('.actual-password');
-    if (maskedPassword.style.display === 'none') {
-        maskedPassword.style.display = '';
-        actualPassword.style.display = 'none';
-        button.innerHTML = '👁️';
-    } else {
+    
+    if (maskedPassword.style.display !== 'none') {
         maskedPassword.style.display = 'none';
-        actualPassword.style.display = '';
-        button.innerHTML = '🔒';
+        actualPassword.style.display = 'inline';
+        button.textContent = '👁️‍🗨️';
+    } else {
+        maskedPassword.style.display = 'inline';
+        actualPassword.style.display = 'none';
+        button.textContent = '👁️';
     }
 }
+
+// Add mouse drag scrolling functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.querySelector('.user-table-container');
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    container.addEventListener('mousedown', (e) => {
+        isDown = true;
+        container.style.cursor = 'grabbing';
+        startX = e.pageX - container.offsetLeft;
+        scrollLeft = container.scrollLeft;
+    });
+
+    container.addEventListener('mouseleave', () => {
+        isDown = false;
+        container.style.cursor = 'grab';
+    });
+
+    container.addEventListener('mouseup', () => {
+        isDown = false;
+        container.style.cursor = 'grab';
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - container.offsetLeft;
+        const walk = (x - startX) * 2; // Scroll speed multiplier
+        container.scrollLeft = scrollLeft - walk;
+    });
+});
 </script>
 <div class="admin-container">
     <h1>User Management</h1>
@@ -325,23 +446,75 @@ function togglePassword(button) {
         <p class="admin-description">You can activate/deactivate users and set new passwords.</p>
     </div>
 
-    <div class="dashboard-cards">
-        <div class="dashboard-card gradient-blue">
-            <div class="card-title">Total Posts</div>
-            <div class="card-value">{{ total_posts }}</div>
-        </div>
-        <div class="dashboard-card gradient-orange">
-            <div class="card-title">Pending Posts</div>
-            <div class="card-value">{{ pending_posts_count }}</div>
-        </div>
-        <div class="dashboard-card gradient-green">
-            <div class="card-title">Total Albums</div>
-            <div class="card-value">{{ total_albums }}</div>
-        </div>
-        <div class="dashboard-card gradient-pink">
-            <div class="card-title">Pending Albums</div>
-            <div class="card-value">{{ pending_albums_count }}</div>
-        </div>
+    <div class="stats-table-container">
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Total Users</th>
+                    <th>Active Users</th>
+                    <th>Inactive Users</th>
+                    <th>Suspended Users</th>
+                    <th>Superusers</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        {{ total_users }}
+                        <span class="stats-label">All Users</span>
+                    </td>
+                    <td>
+                        {{ active_users }}
+                        <span class="stats-label">Active</span>
+                    </td>
+                    <td>
+                        {{ inactive_users }}
+                        <span class="stats-label">Inactive</span>
+                    </td>
+                    <td>
+                        {{ suspended_users }}
+                        <span class="stats-label">Suspended</span>
+                    </td>
+                    <td>
+                        {{ superusers }}
+                        <span class="stats-label">Superusers</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="stats-table-container">
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Total Posts</th>
+                    <th>Pending Posts</th>
+                    <th>Total Albums</th>
+                    <th>Pending Albums</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        {{ total_posts }}
+                        <span class="stats-label">All Posts</span>
+                    </td>
+                    <td>
+                        {{ pending_posts_count }}
+                        <span class="stats-label">Pending</span>
+                    </td>
+                    <td>
+                        {{ total_albums }}
+                        <span class="stats-label">All Albums</span>
+                    </td>
+                    <td>
+                        {{ pending_albums_count }}
+                        <span class="stats-label">Pending</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="user-table-container">
@@ -349,24 +522,19 @@ function togglePassword(button) {
             <thead>
                 <tr>
                     <th>Username</th>
-                    <th>Name</th>
-                    <th>Father's Name</th>
                     <th>Email</th>
-                    <th>Phone</th>
                     <th>Password</th>
                     <th>Status</th>
-                    <th>Email Verified</th>
+                    <th>Activation</th>
+                    <th>Suspension</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in user_data %}
-                <tr class="{% if not user.is_active %}inactive-user{% endif %}">
+                <tr class="{% if not user.is_active %}inactive-user{% endif %} {% if user.userprofile.is_suspended %}suspended-user{% endif %}">
                     <td>{{ user.username }}</td>
-                    <td>{{ user.name }}</td>
-                    <td>{{ user.father_name }}</td>
                     <td>{{ user.email }}</td>
-                    <td>{{ user.phone|default:"-" }}</td>
                     <td class="password-cell">
                         <span class="masked-password">••••••••</span>
                         <span class="actual-password" style="display:none;">{{ user.plain_password }}</span>
@@ -374,31 +542,39 @@ function togglePassword(button) {
                     </td>
                     <td>
                         {% if user.is_active %}
-                        <span class="status active">Active</span>
+                            <span class="badge bg-success">Active</span>
                         {% else %}
-                        <span class="status inactive">Inactive</span>
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                        {% if user.userprofile.is_suspended %}
+                            <span class="badge bg-warning">Suspended</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if user.email_verified %}
-                        <span class="status verified">Verified</span>
+                        {% if user.is_active %}
+                            <a href="{% url 'deactivate_user' user.id %}" class="btn btn-danger btn-sm text-decoration-none">Deactivate</a>
                         {% else %}
-                        <span class="status unverified">Unverified</span>
+                            <a href="{% url 'activate_user' user.id %}" class="btn btn-success btn-sm text-decoration-none">Activate</a>
                         {% endif %}
                     </td>
-                    <td class="actions">
-                        {% if user.is_active %}
-                        <a href="{% url 'deactivate_user' user.id %}" class="btn-action deactivate">Deactivate</a>
+                    <td>
+                        {% if user.userprofile.is_suspended %}
+                            <a href="{% url 'suspend_user' user.id %}" class="btn btn-info btn-sm text-decoration-none" style="background-color: #17a2b8; color: white;">Retrieve</a>
                         {% else %}
-                        <a href="{% url 'activate_user' user.id %}" class="btn-action activate">Activate</a>
+                            <a href="{% url 'suspend_user' user.id %}" class="btn btn-warning btn-sm text-decoration-none" style="background-color: #ffc107; color: black;">Suspend</a>
                         {% endif %}
-                        <a href="{% url 'set_password' user.id %}" class="btn-action password">Set Password</a>
-                        <a href="{% url 'user_family_tree' user.id %}" class="btn-action view-tree" title="View Tree">🌳 View Tree</a>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'user_family_tree' user.id %}" class="btn btn-primary btn-sm text-decoration-none" style="color: white;">View Tree</a>
+                            <a href="{% url 'user_login_info' user.id %}" class="btn btn-secondary btn-sm text-decoration-none" style="color: white;">Login Status</a>
+                            <a href="{% url 'set_password' user.id %}" class="btn btn-info btn-sm text-decoration-none">Set Password</a>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9">No users found.</td>
+                    <td colspan="7">No users found.</td>
                 </tr>
                 {% endfor %}
             </tbody>

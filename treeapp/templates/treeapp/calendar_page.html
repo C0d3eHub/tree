@@ -206,6 +206,23 @@
     .fc-daygrid-day.fc-day-today {
         background-color: #e8f5e9 !important;
     }
+
+    /* Birthday and Anniversary Event Styling */
+    .fc-event[data-event-type="birthday"] {
+        background-color: #4CAF50 !important;
+        border-color: #45a049 !important;
+    }
+
+    .fc-event[data-event-type="anniversary"] {
+        background-color: #ff7e5f !important;
+        border-color: #feb47b !important;
+    }
+
+    .fc-daygrid-event {
+        text-align: center;
+        padding: 2px 4px;
+        margin: 1px 0;
+    }
 </style>
 {% endblock %}
 
@@ -258,16 +275,18 @@ document.addEventListener('DOMContentLoaded', function() {
                           </div>`
                 };
             },
+            eventDidMount: function(info) {
+                // Add event type as data attribute for styling
+                info.el.setAttribute('data-event-type', info.event.extendedProps.type);
+                // Add tooltip
+                info.el.title = info.event.title;
+            },
             eventClick: function(info) {
                 const eventType = info.event.extendedProps.type;
                 const eventName = info.event.title;
                 eventModalTitle.textContent = eventName;
                 eventModalDescription.textContent = `This is ${eventName}!`;
                 eventDetailModal.style.display = 'flex';
-            },
-            eventDidMount: function(info) {
-                // Add tooltip
-                info.el.title = info.event.title;
             }
         });
         calendar.render();

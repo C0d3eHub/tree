@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
-from .models import BloodRequest, UserProfile
+from .models import BloodRequest, UserProfile, RecentDonation
 from .forms import BloodDonorForm, BloodRequestForm
 
 def blood_bank_view(request):
@@ -32,6 +32,17 @@ def blood_bank_view(request):
             'needs': needs_count
         }
     
+    # Check if user is already a donor
+    is_already_donor = False
+    if request.user.is_authenticated:
+        try:
+            is_already_donor = request.user.userprofile.is_blood_donor
+        except UserProfile.DoesNotExist:
+            pass
+    
+    # Get recent donations for all users
+    recent_donations = RecentDonation.objects.all().select_related('user').order_by('-donation_date')
+    
     context = {
         'donations': donations,
         'needs': needs,
@@ -39,6 +50,8 @@ def blood_bank_view(request):
         'blood_stats': blood_stats,
         'total_donors': donations.count() + registered_donors.count(),
         'total_needs': needs.count(),
+        'is_already_donor': is_already_donor,
+        'recent_donations': recent_donations,
     }
     
     return render(request, 'treeapp/blood_bank.html', context)
@@ -139,3 +152,28 @@ def toggle_hide_donor(request, user_id):
     profile.hide_from_donor_list = not profile.hide_from_donor_list
     profile.save()
     return redirect('blood_bank')
+
+@login_required
+def register_recent_donation(request):
+    """View for registering a recent blood donation"""
+    if request.method == 'POST':
+        donation_date = request.POST.get('donation_date')
+        donation_location = request.POST.get('donation_location')
+        donation_notes = request.POST.get('donation_notes')
+
+        if not donation_date or not donation_location:
+            messages.error(request, "Please fill in all required fields.")
+            return redirect('blood_bank')
+
+        try:
+            RecentDonation.objects.create(
+                user=request.user,
+                donation_date=donation_date,
+                donation_location=donation_location,
+                donation_notes=donation_notes
+            )
+            messages.success(request, "Your recent donation has been recorded successfully!")
+        except Exception as e:
+            messages.error(request, "An error occurred while recording your donation. Please try again.")
+        
+        return redirect('blood_bank')

@@ -217,8 +217,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Only proceed if the buttons exist
     if (!compareBtn || !correctionBtn) return;
     
-    if (selectedNode && !compareMode) {
+    if (compareMode) {
       compareBtn.style.display = "inline-block";
+      compareBtn.textContent = "Exit Compare Mode";
+      correctionBtn.style.display = "none"; // Hide correction button in compare mode
+    } else if (selectedNode) {
+      compareBtn.style.display = "inline-block";
+      compareBtn.textContent = "Compare Generations";
       correctionBtn.style.display = "inline-block";
     } else {
       compareBtn.style.display = "none";
@@ -604,22 +609,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .attr("aria-label", "सूचना देखें")
       .on("click", function (event, d) {
         event.stopPropagation();
-        if (compareMode) return;
-        resetHighlight();
-        let match = null;
-        if (d.data.id) {
-          match = d3root.descendants().find((n) => n.data.id === d.data.id);
-        }
-        if (!match && d.data.name) {
-          match = d3root.descendants().find((n) => n.data.name === d.data.name);
-        }
-        if (match) {
-          selectedNode = match;
-          highlightSpineAndSubtree(match);
-          updateActionButtons();
-          if (modalRoot) modalRoot.innerHTML = "";
-        }
-        event.stopPropagation();
+        if (compareMode) return; // If already in compare mode, do nothing
+        // Set the clicked node as selectedNode and highlight it
+        selectedNode = d;
+        highlightSpineAndSubtree(selectedNode);
+        updateActionButtons(); // Make sure compare button is visible
       });
 
     // Add collapse/expand button (➕/➖) outside to the right of the node
@@ -1133,15 +1127,29 @@ document.addEventListener("DOMContentLoaded", function () {
   // Only add event listener if the button exists
   if (compareBtn) {
     compareBtn.addEventListener("click", () => {
-      if (!selectedNode) return;
+      if (compareMode) {
+        exitCompareMode();
+        return;
+      }
+      if (!selectedNode) {
+        showCompareModal(
+          `<div class="modal-title">Comparison Mode</div>
+          <div class="modal-message">Please select a node first to begin comparison.</div>`,
+          true, true // Show only OK button
+        );
+        return;
+      }
+
       compareMode = true;
-      firstNode = null;
+      firstNode = selectedNode; // Auto-select the currently selected node
+      highlightSpineAndSubtree(firstNode); // Highlight the first node
+
       updateActionButtons();
       showCompareModal(
         `<div class="modal-title">Comparison Mode</div>
           <div class="modal-message">
-            <span style="font-weight:bold;color:#0078d7;">Compare generations</span><br>
-            Select <b>first node</b> in the tree to begin.<br>
+            First node: <b>${firstNode.data.name}</b><br>
+            Now select <b>second node</b> to compare generations.
           </div>`,
         true
       );
@@ -1155,26 +1163,19 @@ document.addEventListener("DOMContentLoaded", function () {
       let nodeEl = event.target.closest(".node");
       if (!nodeEl) return;
       let data = d3.select(nodeEl).datum();
-      if (!firstNode) {
-        firstNode = data;
+
+      // If a node is clicked in compare mode and it's the same as the first node
+      if (firstNode && firstNode === data) {
         showCompareModal(
           `<div class="modal-title">Comparison Mode</div>
-        <div class="modal-message">First node: <b>${data.data.name}</b><br>Now select <b>second node</b> to compare generations.</div>`,
+          <div class="modal-message" style="color:#c0392b;">Please select a <b>different node</b> for comparison.</div>`,
           true
         );
         event.stopPropagation();
         return;
-      } else {
-        if (firstNode === data) {
-          showCompareModal(
-            `<div class="modal-title">Comparison Mode</div>
-            <div class="modal-message" style="color:#c0392b;">Please select a <b>different node</b> for comparison.</div>`,
-            true
-          );
-          event.stopPropagation();
-          return;
-        }
-
+      }
+      // If a node is clicked in compare mode and it's a different node, treat it as the second node
+      else if (firstNode && firstNode !== data) {
         const getPathToRoot = (node) => {
           let path = [];
           while (node) {
@@ -1199,24 +1200,20 @@ document.addEventListener("DOMContentLoaded", function () {
         const gap = Math.max(stepsA, stepsB);
 
         showCompareModal(
-          `<div class="modal-title">Comparison Result</div>
-          <div class="modal-message" style="line-height:1.6;">
-            <span style="color:#7d3c98;font-weight:bold;">${firstNode.data.name}</span>
-            <span style="font-size:1.12em;"> vs. </span>
-            <span style="color:#7d3c98;font-weight:bold;">${data.data.name}</span><br>
-            <span style="font-size:115%;color:#0078d7">Generation gap after their common ancestor is <b>${gap}</b></span>
-          </div>`,
-          false,
+          `<div class="modal-title" style="font-size:1.25rem; font-weight:bold; color:#7d3c98;">तुलना परिणाम</div>
+            <div class="modal-message" style="font-size:1.1rem; color:#7d3c98; font-weight:bold;">
+              ${firstNode.data.name} <span style="font-size:1.12em;">vs.</span> ${data.data.name}
+              <br><br>
+              <span style="font-size:115%; color:#0078d7">साझा पूर्वज से दोनों की पीढ़ियों का अंतराल <span style="font-weight:bold;">${gap}</span> है।</span>
+            </div>`,
+          true,
           true
         );
-        comparisonTimeout = setTimeout(() => {
-          exitCompareMode();
-        }, 12000);
         event.stopPropagation();
         return;
       }
     },
-    true
+    { capture: true }
   );
 
   // Only add event listener if the button exists

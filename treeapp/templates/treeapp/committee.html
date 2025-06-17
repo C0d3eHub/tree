@@ -1,0 +1,224 @@
+{% extends 'treeapp/base.html' %}
+{% load static %}
+
+{% block title %}Our Committee | Family Tree{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #f6f8fa 60%, #e3f2fd 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .committee-container {
+        max-width: 1200px;
+        margin: 3rem auto;
+        padding: 0 1.5rem;
+        text-align: center;
+    }
+    .committee-container h1 {
+        color: #222;
+        margin-bottom: 2.5rem;
+        font-weight: 900;
+        letter-spacing: -1px;
+        font-size: 3rem;
+        line-height: 1.2;
+        position: relative;
+        display: inline-block;
+    }
+    .committee-container h1::after {
+        content: '';
+        display: block;
+        width: 80px;
+        height: 5px;
+        background: #1976d2;
+        margin: 15px auto 0;
+        border-radius: 5px;
+    }
+
+    /* Table specific styles */
+    .committee-table-container {
+        overflow-x: auto;
+        margin-top: 2rem;
+        margin-bottom: 2.5rem;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        padding: 1.5rem;
+    }
+
+    .committee-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1.07rem;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .committee-table th, .committee-table td {
+        padding: 1rem 1.2rem;
+        text-align: left;
+        font-size: 1.07rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .committee-table th {
+        background-color: #e3f2fd;
+        font-weight: 800;
+        color: #1976d2;
+        font-size: 1.13rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .committee-table tr:nth-child(even) {
+        background: #f6f8fa;
+    }
+
+    .committee-table tr:hover {
+        background-color: #e3f2fd;
+        transition: background 0.2s;
+    }
+
+    .committee-member-photo {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #1976d2;
+        vertical-align: middle;
+    }
+
+    /* Pagination styles */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 2rem;
+        gap: 10px;
+    }
+
+    .pagination a,
+    .pagination .current {
+        display: inline-block;
+        padding: 0.8rem 1.2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #1976d2;
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb;
+        transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+        font-weight: 600;
+    }
+
+    .pagination a:hover {
+        background-color: #bbdefb;
+        color: #0d47a1;
+        box-shadow: 0 4px 12px rgba(25, 118, 210, 0.1);
+    }
+
+    .pagination .current {
+        background-color: #1976d2;
+        color: #fff;
+        cursor: default;
+        box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+    }
+
+    .pagination .disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Responsive adjustments for table */
+    @media (max-width: 768px) {
+        .committee-container h1 {
+            font-size: 2.5rem;
+        }
+        .committee-table th, .committee-table td {
+            padding: 0.8rem 0.5rem;
+            font-size: 0.95rem;
+        }
+        .committee-member-photo {
+            width: 50px;
+            height: 50px;
+        }
+        .pagination a, .pagination .current {
+            padding: 0.6rem 0.9rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .committee-container h1 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .committee-table-container {
+            padding: 1rem;
+        }
+        .committee-table th, .committee-table td {
+            font-size: 0.85rem;
+        }
+        .committee-member-photo {
+            width: 40px;
+            height: 40px;
+        }
+        .pagination {
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+    }
+</style>
+
+<div class="committee-container">
+    <h1>Our Esteemed Committee</h1>
+
+    <div class="committee-table-container">
+        <table class="committee-table">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Designation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in page_obj %}
+                <tr>
+                    <td>
+                        {% if member.picture %}
+                            <img src="{{ member.picture.url }}" alt="{{ member.name }}" class="committee-member-photo">
+                        {% else %}
+                            <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="committee-member-photo">
+                        {% endif %}
+                    </td>
+                    <td>{{ member.name }}</td>
+                    <td>{{ member.designation }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No committee members found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
